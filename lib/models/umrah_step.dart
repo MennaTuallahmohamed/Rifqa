@@ -1,0 +1,1 @@
+class UmrahStep { final String icon,title,body,dua,tip,error; final String? simulation; const UmrahStep({required this.icon,required this.title,required this.body,required this.dua,required this.tip,required this.error,this.simulation}); }
