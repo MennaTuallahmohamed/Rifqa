@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "463378171131",
+    "project_id": "rifqa-24304",
+    "storage_bucket": "rifqa-24304.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:463378171131:android:0e7770465d2aa1129adc5e",
+        "android_client_info": {
+          "package_name": "com.example.rafeek"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC1F8skoIB07L8ua69cEMAvrUWfrR7Chk4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

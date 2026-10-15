@@ -1,0 +1,36 @@
+{
+  "schemaVersion": "1.0",
+  "_readme": [
+    "pois: نقطة = id, site(makkah|madinah), name, subtitle, category(gate|toilet|wudu|water|women|medical|info|accessibility|elevator|ritual|courtyard|landmark), lat, lng, verificationStatus(VERIFIED_POI|VERIFIED_ACCESS|VERIFIED_ROUTE|UNVERIFIED), gateNumber, floor, wheelchair, womenOnly, photo(مسار داخل assets), keywords[]",
+    "nodes: عقد شبكة المشي = id, site, lat, lng, poiId(اختياري: ترتبط بنقطة)",
+    "edges: ممرات بين عقدتين = a, b, accessible, verificationStatus, navigationAllowed",
+    "لا تدخل الحافة في الملاحة إلا لو verificationStatus = VERIFIED_ROUTE و navigationAllowed = true",
+    "النقاط UNVERIFIED تظهر في وضع التطوير فقط (kShowUnverifiedPois). غيّرها إلى VERIFIED_POI بعد مراجعتها من مصدر رسمي."
+  ],
+  "pois": [
+    {
+      "id": "mk_kaaba",
+      "site": "makkah",
+      "name": "الكعبة المشرفة",
+      "subtitle": "مركز المسجد الحرام",
+      "category": "ritual",
+      "lat": 21.42249,
+      "lng": 39.82618,
+      "verificationStatus": "UNVERIFIED",
+      "keywords": ["مطاف", "كعبة", "طواف"]
+    },
+    {
+      "id": "md_rawdah",
+      "site": "madinah",
+      "name": "المسجد النبوي",
+      "subtitle": "مركز المسجد النبوي",
+      "category": "landmark",
+      "lat": 24.4672,
+      "lng": 39.61114,
+      "verificationStatus": "UNVERIFIED",
+      "keywords": ["روضة", "مسجد"]
+    }
+  ],
+  "nodes": [],
+  "edges": []
+}

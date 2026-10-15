@@ -1,0 +1,9 @@
+{
+  "name": "rifqa-rules-local-tests",
+  "private": true,
+  "scripts": {"test:emulator": "firebase emulators:exec --only firestore --project demo-rifqa-local \"node security.test.cjs\""},
+  "dependencies": {
+    "@firebase/rules-unit-testing": "^4.0.1",
+    "firebase": "^11.6.0"
+  }
+}

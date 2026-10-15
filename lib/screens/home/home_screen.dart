@@ -1,251 +1,690 @@
-import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
-import '../../core/theme/app_colors.dart';
+
 import '../../state/app_state.dart';
+import '../../services/madinah/madinah_content_repository.dart';
+import '../../services/madinah/madinah_repository.dart';
+
+import '../duas/duas_screen.dart';
+import '../hajj/hajj_screen.dart';
+import '../haramain/haramain_ultimate_screen.dart';
+import '../madinah/madinah_screen.dart';
+import '../umrah/umrah_screen.dart';
+import '../ziyarat/ziyarat_screen.dart';
 import '../services/service_screen.dart';
 
-class _C {
-  static const ivory = Color(0xFFFAF7F0);
-  static const ink = Color(0xFF17322A);
-  static const muted = Color(0xFF6B7B74);
-  static const goldLight = Color(0xFFE9CF8B);
-  static const border = Color(0xFFEDE7D6);
+// =====================================================
+// RIFQA - PREMIUM HOME
+// UI redesign only. AppShell remains unchanged.
+// =====================================================
+
+class _R {
+  static const bg = Color(0xFFFAF8F3);
+  static const green = Color(0xFF104B39);
+  static const deep = Color(0xFF073C2D);
+  static const gold = Color(0xFFC5A15F);
+  static const softGold = Color(0xFFF6EEDB);
+  static const text = Color(0xFF1E302A);
+  static const muted = Color(0xFF78847D);
+  static const border = Color(0xFFEEE9E0);
+  static const softGreen = Color(0xFFEAF0E8);
 }
 
-class _Svc {
-  final String label;
-  final IconData icon;
-  final int code; // >= 0 : تبويب ، < 0 : ServiceScreen
-  final List<Color> colors;
-  const _Svc(this.label, this.icon, this.code, this.colors);
-}
+class _HomeService {
+  const _HomeService(
+    this.title,
+    this.subtitle,
+    this.icon,
+    this.code,
+  );
 
-class _Group {
   final String title;
   final String subtitle;
-  final List<_Svc> items;
-  const _Group(this.title, this.subtitle, this.items);
+  final IconData icon;
+  final int code;
 }
 
-const _emerald = [Color(0xFF1E8F6A), Color(0xFF0F5E45)];
-const _gold = [Color(0xFFD9B45A), Color(0xFFB88A2E)];
-const _sky = [Color(0xFF3B8FC4), Color(0xFF22638F)];
-const _plum = [Color(0xFF8A5FB0), Color(0xFF5E3C82)];
-const _rose = [Color(0xFFD9675B), Color(0xFFA8403A)];
-const _teal = [Color(0xFF2BA6A0), Color(0xFF17716C)];
+const _mainServices = <_HomeService>[
+  _HomeService(
+    'الخريطة',
+    'اكتشف الأماكن المهمة',
+    Icons.map_rounded,
+    2,
+  ),
+  _HomeService(
+    'الرفاق',
+    'مع مجموعتك في كل خطوة',
+    Icons.groups_rounded,
+    -5,
+  ),
+  _HomeService(
+    'الأدعية',
+    'دعاء يرافق رحلتك',
+    Icons.menu_book_rounded,
+    -4,
+  ),
+  _HomeService(
+    'المدينة',
+    'أجواء المسجد النبوي',
+    Icons.mosque_rounded,
+    -2,
+  ),
+  _HomeService(
+    'المزارات',
+    'تعرّف على الأماكن',
+    Icons.place_rounded,
+    -3,
+  ),
+  _HomeService(
+    'دليل العمرة',
+    'أدِّ المناسك بطمأنينة',
+    Icons.auto_stories_rounded,
+    1,
+  ),
+];
 
-const _groups = <_Group>[
-  _Group('مناسكك', 'كل ما تحتاجه لأداء النسك بطمأنينة', [
-    _Svc('دليل العمرة', Icons.mosque_rounded, 1, _emerald),
-    _Svc('الحج', Icons.landscape_rounded, -1, _gold),
-    _Svc('الأدعية', Icons.front_hand_rounded, -4, _plum),
-    _Svc('المنبه', Icons.alarm_rounded, -6, _sky),
-  ]),
-  _Group('أماكنك', 'اعرف طريقك في الحرمين والمدينة', [
-    _Svc('خريطة الحرم', Icons.map_rounded, 2, _teal),
-    _Svc('المدينة', Icons.location_city_rounded, -2, _emerald),
-    _Svc('المزارات', Icons.place_rounded, -3, _rose),
-    _Svc('الأسواق', Icons.storefront_rounded, -7, _gold),
-  ]),
-  _Group('رحلتك', 'رفقاؤك وأهم ما يلزمك', [
-    _Svc('الرفاق', Icons.groups_rounded, -5, _sky),
-    _Svc('أرقام مهمة', Icons.phone_in_talk_rounded, -8, _rose),
-    _Svc('حسابي', Icons.person_rounded, -9, _plum),
-  ]),
+const _moreServices = <_HomeService>[
+  _HomeService(
+    'الحج',
+    'دليل مناسك الحج',
+    Icons.landscape_rounded,
+    -1,
+  ),
+  _HomeService(
+    'المنبه',
+    'نظّم أوقاتك',
+    Icons.alarm_rounded,
+    -6,
+  ),
+  _HomeService(
+    'الأسواق',
+    'خدمات قريبة منك',
+    Icons.storefront_rounded,
+    -7,
+  ),
+  _HomeService(
+    'أرقام مهمة',
+    'أرقام قد تحتاجها',
+    Icons.call_rounded,
+    -8,
+  ),
+  _HomeService(
+    'حسابي',
+    'ملفك الشخصي',
+    Icons.person_rounded,
+    -9,
+  ),
 ];
 
 class HomeScreen extends StatelessWidget {
-  final ValueChanged<int> open;
-  const HomeScreen({super.key, required this.open});
+  const HomeScreen({
+    super.key,
+    required this.open,
+  });
 
-  void _go(BuildContext c, _Svc s) {
-    if (s.code >= 0) {
-      open(s.code);
-    } else {
-      Navigator.push(
-          c, MaterialPageRoute(builder: (_) => ServiceScreen(code: s.code)));
+  final ValueChanged<int> open;
+
+  static final MadinahRepository _madinahRepository =
+      MadinahRepository();
+
+  static final MadinahContentRepository
+      _madinahContentRepository =
+      MadinahContentRepository();
+
+  // -----------------------------------------------
+  // Existing navigation
+  // -----------------------------------------------
+
+  void _go(BuildContext context, int code) {
+    // Special Home actions must not be interpreted as Shell tab indexes.
+    if (code == -5) {
+      open(2); // Rifqati / Groups tab
+      return;
     }
+    if (code == -9) {
+      open(3); // Account tab
+      return;
+    }
+    if (code == 1) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => const UmrahScreen()),
+      );
+      return;
+    }
+    if (code == 2) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const HaramainUltimateScreen(),
+        ),
+      );
+      return;
+    }
+
+    if (code == -1) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const HajjScreen(),
+        ),
+      );
+      return;
+    }
+
+    if (code == -2) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => MadinahScreen(
+            repository: _madinahRepository,
+            contentRepository: _madinahContentRepository,
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (code == -3) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const ZiyaratScreen(),
+        ),
+      );
+      return;
+    }
+
+    if (code == -4) {
+      final state = AppScope.of(context);
+
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => DuasScreen(
+            repository: state.duas,
+          ),
+        ),
+      );
+      return;
+    }
+
+    if (code >= 0) {
+      // This uses the existing AppShell contract.
+      // We are not changing tab indexes here.
+      open(code);
+      return;
+    }
+
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ServiceScreen(code: code),
+      ),
+    );
   }
 
-  String _hint(int p) {
-    if (p == 0) return 'ابدأ بنية خالصة، والبداية من الإحرام';
-    if (p < 50) return 'ما شاء الله، واصل بخطى ثابتة';
-    if (p < 100) return 'اقتربت من إتمام عمرتك، تقبّل الله منك';
+  void _openQuickHelp(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: _R.bg,
+      showDragHandle: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(28),
+        ),
+      ),
+      builder: (sheetContext) {
+        return Directionality(
+          textDirection: TextDirection.rtl,
+          child: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(
+                18, 8, 18, 20,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'كيف نساعدك في رحلتك؟',
+                    style: TextStyle(
+                      color: _R.deep,
+                      fontSize: 21,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _quickAction(
+                    sheetContext,
+                    context,
+                    'خريطة الحرم',
+                    Icons.map_rounded,
+                    2,
+                  ),
+                  _quickAction(
+                    sheetContext,
+                    context,
+                    'دليل الأدعية',
+                    Icons.menu_book_rounded,
+                    -4,
+                  ),
+                  _quickAction(
+                    sheetContext,
+                    context,
+                    'المدينة المنورة',
+                    Icons.mosque_rounded,
+                    -2,
+                  ),
+                  _quickAction(
+                    sheetContext,
+                    context,
+                    'المزارات',
+                    Icons.place_rounded,
+                    -3,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _quickAction(
+    BuildContext sheetContext,
+    BuildContext pageContext,
+    String title,
+    IconData icon,
+    int code,
+  ) {
+    return ListTile(
+      leading: Icon(icon, color: _R.green),
+      title: Text(title),
+      trailing: const Icon(
+        Icons.chevron_left_rounded,
+        color: _R.gold,
+      ),
+      onTap: () {
+        Navigator.of(sheetContext).pop();
+        _go(pageContext, code);
+      },
+    );
+  }
+
+  String _journeyHint(int progress) {
+    if (progress == 0) {
+      return 'ابدأ بنية خالصة، والبداية من الإحرام';
+    }
+    if (progress < 50) {
+      return 'ما شاء الله، واصل بخطى ثابتة';
+    }
+    if (progress < 100) {
+      return 'اقتربت من إتمام عمرتك، تقبّل الله منك';
+    }
     return 'أتممت عمرتك، تقبّل الله طاعتك';
   }
 
   @override
-  Widget build(BuildContext c) {
-    final st = AppScope.of(c);
-    final p = st.progress.clamp(0, 100).toInt();
+  Widget build(BuildContext context) {
+    final state = AppScope.of(context);
+    final progress = state.progress.clamp(0, 100).toInt();
+    final name = state.name.trim().isEmpty
+        ? 'ضيف الرحمن'
+        : state.name.trim();
 
-    return Container(
-      color: _C.ivory,
-      child: CustomScrollView(
-        physics: const BouncingScrollPhysics(),
-        slivers: [
-          SliverToBoxAdapter(
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                _Hero(name: st.name),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 196, 16, 0),
-                  child: _JourneyCard(
-                    progress: p,
-                    hint: _hint(p),
-                    onTap: () => open(1),
-                  ),
-                ),
-              ],
+    final width = MediaQuery.sizeOf(context).width;
+    final padding = width < 355 ? 12.0 : 16.0;
+
+    // Three cards on typical mobile widths.
+    final columns = width >= 355 ? 3 : 2;
+
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: ColoredBox(
+        color: _R.bg,
+        child: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            // Hero is independent, no negative offsets.
+            SliverToBoxAdapter(
+              child: _HomeHero(name: name),
             ),
-          ),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 18, 16, 6),
-              child: _SosCard(onTap: () => open(3)),
-            ),
-          ),
-          for (final g in _groups) ...[
+
             SliverToBoxAdapter(
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 4,
-                      height: 34,
-                      decoration: BoxDecoration(
-                        color: AppColors.gold,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(g.title,
-                              style: const TextStyle(
-                                  color: _C.ink,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.w800)),
-                          const SizedBox(height: 2),
-                          Text(g.subtitle,
-                              style: const TextStyle(
-                                  color: _C.muted, fontSize: 12.5)),
-                        ],
-                      ),
-                    ),
-                  ],
+                padding: EdgeInsets.fromLTRB(
+                  padding, 14, padding, 10,
+                ),
+                child: _SearchCard(
+                  onTap: () => _openQuickHelp(context),
                 ),
               ),
             ),
+
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  padding, 5, padding, 0,
+                ),
+                child: _JourneyCard(
+                  progress: progress,
+                  hint: _journeyHint(progress),
+                  onTap: () => _go(context, 1),
+                ),
+              ),
+            ),
+
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  padding, 22, padding, 12,
+                ),
+                child: const _SectionHeading(
+                  title: 'رفقة في كل خطوة',
+                  subtitle:
+                      'كل ما تحتاجه لرحلة إيمانية مطمئنة',
+                ),
+              ),
+            ),
+
             SliverPadding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
+              padding: EdgeInsets.symmetric(
+                horizontal: padding,
+              ),
               sliver: SliverGrid.builder(
-                itemCount: g.items.length,
-                // ارتفاع ثابت بدل النسبة => لا يحدث overflow مهما كان حجم الخط
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: g.items.length >= 4 ? 4 : 3,
+                itemCount: _mainServices.length,
+                gridDelegate:
+                    SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: columns,
                   crossAxisSpacing: 10,
                   mainAxisSpacing: 10,
-                  mainAxisExtent: 118,
+                  mainAxisExtent: 164,
                 ),
-                itemBuilder: (ctx, i) => _ServiceTile(
-                    svc: g.items[i], onTap: () => _go(ctx, g.items[i])),
+                itemBuilder: (context, index) {
+                  final service = _mainServices[index];
+
+                  return _ServiceCard(
+                    service: service,
+                    onTap: () => _go(
+                      context,
+                      service.code,
+                    ),
+                  );
+                },
               ),
             ),
-          ],
-          const SliverToBoxAdapter(
-            child: Padding(
-              padding: EdgeInsets.fromLTRB(16, 26, 16, 0),
-              child: _TalbiyahBanner(),
+
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  padding, 16, padding, 0,
+                ),
+                child: _SosCard(
+                  // Preserving the current Shell callback.
+                  onTap: () => open(1),
+                ),
+              ),
             ),
-          ),
-          const SliverToBoxAdapter(child: SizedBox(height: 32)),
-        ],
+
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  padding, 16, padding, 0,
+                ),
+                child: const _SpiritualCard(),
+              ),
+            ),
+
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  padding, 23, padding, 12,
+                ),
+                child: const _SectionHeading(
+                  title: 'استكشف المزيد',
+                  subtitle:
+                      'خدمات وتفاصيل تسهّل رحلتك',
+                ),
+              ),
+            ),
+
+            SliverPadding(
+              padding: EdgeInsets.symmetric(
+                horizontal: padding,
+              ),
+              sliver: SliverList.separated(
+                itemCount: _moreServices.length,
+                separatorBuilder: (_, __) =>
+                    const SizedBox(height: 10),
+                itemBuilder: (context, index) {
+                  final service = _moreServices[index];
+
+                  return _MoreTile(
+                    service: service,
+                    onTap: () => _go(
+                      context,
+                      service.code,
+                    ),
+                  );
+                },
+              ),
+            ),
+
+            const SliverToBoxAdapter(
+              child: SizedBox(height: 32),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-// ═════════════════════════ الهيدر ═════════════════════════
-class _Hero extends StatelessWidget {
+// =====================================================
+// HERO
+// =====================================================
+
+class _HomeHero extends StatelessWidget {
+  const _HomeHero({required this.name});
+
   final String name;
-  const _Hero({required this.name});
 
   @override
   Widget build(BuildContext context) {
-    final who = name.trim().isEmpty ? 'ضيف الرحمن' : name.trim();
-    return Container(
-      height: 250,
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-          colors: [AppColors.green, AppColors.greenDark, Color(0xFF083D2D)],
-        ),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(36)),
-      ),
+    final top = MediaQuery.paddingOf(context).top;
+
+    return SizedBox(
+      height: top + 350,
       child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(36)),
+        borderRadius: const BorderRadius.vertical(
+          bottom: Radius.circular(30),
+        ),
         child: Stack(
+          fit: StackFit.expand,
           children: [
-            const Positioned.fill(
-              child: CustomPaint(painter: _GeometricPatternPainter()),
+            // Existing project image.
+            Image.asset(
+              'assets/images/rifqa_home_hero.jpg',
+              fit: BoxFit.cover,
+              alignment: const Alignment(0, .25),
+              errorBuilder: (context, error, stackTrace) {
+                return const DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        Color(0xFFF5E9D5),
+                        Color(0xFFD5E4D6),
+                      ],
+                    ),
+                  ),
+                  child: Center(
+                    child: Icon(
+                      Icons.mosque_rounded,
+                      size: 130,
+                      color: _R.green,
+                    ),
+                  ),
+                );
+              },
             ),
+
+            // Readable text without hiding the Kaaba.
+            const DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topRight,
+                  end: Alignment.bottomLeft,
+                  stops: [0, .48, 1],
+                  colors: [
+                    Color(0xF8FFF9EC),
+                    Color(0xC9FFF6E6),
+                    Color(0x00FFFFFF),
+                  ],
+                ),
+              ),
+            ),
+
             SafeArea(
               bottom: false,
               child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                padding: const EdgeInsets.fromLTRB(
+                  19, 10, 19, 15,
+                ),
+                child: Column(
+                  crossAxisAlignment:
+                      CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('السلام عليكم ورحمة الله',
-                              style: TextStyle(
-                                  color: _C.goldLight,
-                                  fontSize: 13.5,
-                                  fontWeight: FontWeight.w600)),
-                          const SizedBox(height: 4),
-                          Text(who,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 22,
-                                  fontWeight: FontWeight.w800)),
-                          const SizedBox(height: 12),
-                          const Text('رفيق المعتمر',
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 30,
-                                  height: 1.1,
-                                  fontWeight: FontWeight.w900)),
-                          const SizedBox(height: 6),
-                          Text('لبّيك اللهم لبّيك',
-                              style: TextStyle(
-                                  color: Colors.white.withOpacity(.8),
-                                  fontSize: 14)),
-                        ],
+                    Row(
+                      children: [
+                        Container(
+                          padding:
+                              const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 9,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white
+                                .withValues(alpha: .94),
+                            borderRadius:
+                                BorderRadius.circular(24),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.location_on_rounded,
+                                color: _R.green,
+                                size: 17,
+                              ),
+                              SizedBox(width: 5),
+                              Text(
+                                'مكة المكرمة',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: _R.text,
+                                  fontWeight:
+                                      FontWeight.w800,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Spacer(),
+                        const CircleAvatar(
+                          radius: 19,
+                          backgroundColor: Colors.white,
+                          child: Icon(
+                            Icons.auto_awesome_rounded,
+                            color: _R.gold,
+                            size: 20,
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    Text(
+                      'السلام عليكم يا $name',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: _R.green,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.all(3),
-                      decoration: const BoxDecoration(
-                        shape: BoxShape.circle,
-                        gradient: LinearGradient(
-                            colors: [_C.goldLight, AppColors.gold]),
+
+                    const SizedBox(height: 7),
+
+                    const Text(
+                      'رفيق المعتمر',
+                      style: TextStyle(
+                        color: _R.deep,
+                        fontSize: 35,
+                        height: 1.17,
+                        fontWeight: FontWeight.w900,
                       ),
-                      child: const CircleAvatar(
-                        radius: 24,
-                        backgroundColor: AppColors.greenDark,
-                        child: Icon(Icons.person_rounded,
-                            color: Colors.white, size: 26),
+                    ),
+
+                    const SizedBox(height: 9),
+
+                    const _GoldDivider(),
+
+                    const SizedBox(height: 13),
+
+                    const Text(
+                      'معك في كل خطوة من رحلتك المباركة\n'
+                      'لعمرة أسهل وقلب أكثر طمأنينة',
+                      style: TextStyle(
+                        fontSize: 13,
+                        height: 1.65,
+                        color: _R.text,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+
+                    const Spacer(),
+
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 13,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white
+                            .withValues(alpha: .94),
+                        borderRadius:
+                            BorderRadius.circular(19),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black
+                                .withValues(alpha: .05),
+                            blurRadius: 15,
+                          ),
+                        ],
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(
+                            Icons.favorite_border_rounded,
+                            color: _R.gold,
+                            size: 20,
+                          ),
+                          SizedBox(width: 9),
+                          Expanded(
+                            child: Text(
+                              'اللهم يسّر لنا عمرةً متقبّلة',
+                              style: TextStyle(
+                                color: _R.green,
+                                fontWeight:
+                                    FontWeight.w800,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                          Icon(
+                            Icons.auto_awesome_rounded,
+                            color: _R.gold,
+                            size: 17,
+                          ),
+                        ],
                       ),
                     ),
                   ],
@@ -259,352 +698,639 @@ class _Hero extends StatelessWidget {
   }
 }
 
-class _GeometricPatternPainter extends CustomPainter {
-  const _GeometricPatternPainter();
+class _GoldDivider extends StatelessWidget {
+  const _GoldDivider();
 
   @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1
-      ..color = Colors.white.withOpacity(.07);
-    const step = 58.0;
-    const r = 22.0;
-    for (double y = -10; y < size.height + step; y += step) {
-      for (double x = -10; x < size.width + step; x += step) {
-        canvas.drawPath(_star(Offset(x, y), r), paint);
-        canvas.drawPath(
-            _star(Offset(x + step / 2, y + step / 2), r * .55), paint);
-      }
-    }
+  Widget build(BuildContext context) {
+    return const Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          width: 34,
+          child: Divider(
+            color: _R.gold,
+            thickness: 1.2,
+          ),
+        ),
+        SizedBox(width: 5),
+        Icon(
+          Icons.diamond_outlined,
+          color: _R.gold,
+          size: 16,
+        ),
+        SizedBox(width: 5),
+        SizedBox(
+          width: 34,
+          child: Divider(
+            color: _R.gold,
+            thickness: 1.2,
+          ),
+        ),
+      ],
+    );
   }
-
-  Path _star(Offset c, double r) {
-    final path = Path();
-    for (final rot in [math.pi / 4, 0.0]) {
-      for (int i = 0; i < 4; i++) {
-        final a = rot + i * math.pi / 2 + math.pi / 4;
-        final pt = Offset(c.dx + r * math.cos(a), c.dy + r * math.sin(a));
-        i == 0 ? path.moveTo(pt.dx, pt.dy) : path.lineTo(pt.dx, pt.dy);
-      }
-      path.close();
-    }
-    return path;
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter old) => false;
 }
 
-// ═════════════════════════ بطاقة الرحلة ═════════════════════════
+// =====================================================
+// SEARCH
+// =====================================================
+
+class _SearchCard extends StatelessWidget {
+  const _SearchCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return _WhiteSurface(
+      onTap: onTap,
+      radius: 22,
+      child: SizedBox(
+        height: 60,
+        child: Padding(
+          padding: const EdgeInsets.all(7),
+          child: Row(
+            children: [
+              Container(
+                width: 46,
+                height: 46,
+                decoration: BoxDecoration(
+                  color: _R.green,
+                  borderRadius:
+                      BorderRadius.circular(15),
+                ),
+                child: const Icon(
+                  Icons.chevron_left_rounded,
+                  color: Colors.white,
+                  size: 25,
+                ),
+              ),
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Text(
+                  'كيف يمكننا مساعدتك في رحلتك؟',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: _R.muted,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+              const Icon(
+                Icons.search_rounded,
+                color: _R.text,
+                size: 23,
+              ),
+              const SizedBox(width: 11),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// =====================================================
+// JOURNEY PROGRESS
+// =====================================================
+
 class _JourneyCard extends StatelessWidget {
+  const _JourneyCard({
+    required this.progress,
+    required this.hint,
+    required this.onTap,
+  });
+
   final int progress;
   final String hint;
   final VoidCallback onTap;
-  const _JourneyCard(
-      {required this.progress, required this.hint, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white, // لون صريح => لا يظهر الظل داخل الكارت
-        borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: AppColors.gold.withOpacity(.4)),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.greenDark.withOpacity(.16),
-            blurRadius: 24,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(26),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(26),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 78,
-                  height: 78,
-                  child: CustomPaint(
-                    painter: _RingPainter(progress / 100),
-                    child: Center(
-                      child: progress == 0
-                          ? const Text('🕋', style: TextStyle(fontSize: 28))
-                          : Text('$progress%',
-                              style: const TextStyle(
-                                  color: _C.ink,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w900)),
+    return _WhiteSurface(
+      onTap: onTap,
+      radius: 23,
+      child: Padding(
+        padding: const EdgeInsets.all(15),
+        child: Row(
+          children: [
+            Container(
+              width: 61,
+              height: 61,
+              decoration: const BoxDecoration(
+                color: _R.softGreen,
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: Text(
+                  progress == 0
+                      ? '🕋'
+                      : '$progress%',
+                  style: TextStyle(
+                    color: _R.green,
+                    fontSize: progress == 0 ? 25 : 17,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'رحلة عمرتك',
+                    style: TextStyle(
+                      color: _R.text,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 16,
                     ),
                   ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('رحلة عمرتك',
-                          style: TextStyle(
-                              color: _C.ink,
-                              fontSize: 17,
-                              fontWeight: FontWeight.w800)),
-                      const SizedBox(height: 4),
-                      Text(hint,
-                          style: const TextStyle(
-                              color: _C.muted, fontSize: 12.5, height: 1.4)),
-                      const SizedBox(height: 10),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 8),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(colors: [
-                            AppColors.green,
-                            AppColors.greenDark
-                          ]),
-                          borderRadius: BorderRadius.circular(14),
-                        ),
-                        child: Text(
-                            progress == 0 ? 'ابدأ رحلتك' : 'تابع رحلتك',
-                            style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 13)),
-                      ),
-                    ],
+                  const SizedBox(height: 4),
+                  Text(
+                    hint,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: _R.muted,
+                      fontSize: 11,
+                      height: 1.4,
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 11),
+                  ClipRRect(
+                    borderRadius:
+                        BorderRadius.circular(8),
+                    child: LinearProgressIndicator(
+                      value: progress / 100,
+                      minHeight: 6,
+                      color: _R.gold,
+                      backgroundColor:
+                          _R.softGreen,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
+            const SizedBox(width: 8),
+            const Icon(
+              Icons.chevron_left_rounded,
+              color: _R.green,
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-class _RingPainter extends CustomPainter {
-  final double value;
-  _RingPainter(this.value);
+// =====================================================
+// SECTION TITLE
+// =====================================================
+
+class _SectionHeading extends StatelessWidget {
+  const _SectionHeading({
+    required this.title,
+    required this.subtitle,
+  });
+
+  final String title;
+  final String subtitle;
 
   @override
-  void paint(Canvas canvas, Size size) {
-    const stroke = 8.0;
-    final rect = Offset.zero & size;
-    final arcRect = rect.deflate(stroke / 2);
-
-    canvas.drawArc(
-        arcRect,
-        0,
-        math.pi * 2,
-        false,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = stroke
-          ..color = AppColors.softGreen);
-
-    if (value > 0) {
-      final fg = Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round
-        ..strokeWidth = stroke
-        ..color = AppColors.gold;
-      canvas.drawArc(arcRect, -math.pi / 2, math.pi * 2 * value, false, fg);
-    }
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: _R.deep,
+            fontSize: 21,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          subtitle,
+          style: const TextStyle(
+            color: _R.muted,
+            fontSize: 12,
+          ),
+        ),
+      ],
+    );
   }
-
-  @override
-  bool shouldRepaint(covariant _RingPainter old) => old.value != value;
 }
 
-// ═════════════════════════ زر أنا تائه ═════════════════════════
-class _SosCard extends StatelessWidget {
+// =====================================================
+// MAIN SERVICE CARD
+// =====================================================
+
+class _ServiceCard extends StatelessWidget {
+  const _ServiceCard({
+    required this.service,
+    required this.onTap,
+  });
+
+  final _HomeService service;
   final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return _WhiteSurface(
+      onTap: onTap,
+      radius: 21,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          7, 9, 7, 9,
+        ),
+        child: Column(
+          children: [
+            Container(
+              width: double.infinity,
+              height: 59,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [
+                    Color(0xFFF8F4EC),
+                    Color(0xFFE9F0E8),
+                  ],
+                ),
+                borderRadius:
+                    BorderRadius.circular(15),
+              ),
+              child: Icon(
+                service.icon,
+                color: _R.green,
+                size: 30,
+              ),
+            ),
+            const SizedBox(height: 9),
+            Text(
+              service.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: _R.text,
+                fontSize: 12.5,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              service.subtitle,
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: _R.muted,
+                fontSize: 9.5,
+                height: 1.3,
+              ),
+            ),
+            const Spacer(),
+            const CircleAvatar(
+              radius: 11,
+              backgroundColor: _R.softGold,
+              child: Icon(
+                Icons.chevron_left_rounded,
+                color: _R.green,
+                size: 16,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// =====================================================
+// SOS
+// =====================================================
+
+class _SosCard extends StatelessWidget {
   const _SosCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return _WhiteSurface(
+      onTap: onTap,
+      radius: 22,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: 13,
+          vertical: 14,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFCE7E2),
+                borderRadius:
+                    BorderRadius.circular(15),
+              ),
+              child: const Icon(
+                Icons.sos_rounded,
+                color: Color(0xFFB74A3F),
+                size: 27,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Expanded(
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'أنا تائه — المساعدة السريعة',
+                    style: TextStyle(
+                      color: _R.text,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 13.5,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'اعرف طريقك واطلب المساعدة عند الحاجة',
+                    style: TextStyle(
+                      color: _R.muted,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.chevron_left_rounded,
+              color: Color(0xFFB74A3F),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// =====================================================
+// SPIRITUAL BANNER
+// =====================================================
+
+class _SpiritualCard extends StatelessWidget {
+  const _SpiritualCard();
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: double.infinity,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
         gradient: const LinearGradient(
           begin: Alignment.topRight,
           end: Alignment.bottomLeft,
-          colors: [Color(0xFFE0584C), Color(0xFFB02F2F)],
+          colors: [
+            _R.green,
+            _R.deep,
+          ],
         ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFB02F2F).withOpacity(.25),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
         borderRadius: BorderRadius.circular(24),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(24),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            child: Row(
-              children: [
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(.2),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.sos_rounded,
-                      color: Colors.white, size: 28),
-                ),
-                const SizedBox(width: 14),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('أنا تائه',
-                          style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 17,
-                              fontWeight: FontWeight.w800)),
-                      SizedBox(height: 2),
-                      Text('اعرف أقرب باب وطريقك وأبلغ مجموعتك',
-                          style: TextStyle(
-                              color: Colors.white70, fontSize: 12.5)),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.arrow_back_ios_new_rounded,
-                    color: Colors.white, size: 18),
-              ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Stack(
+          children: [
+            Positioned(
+              left: -17,
+              bottom: -20,
+              child: Icon(
+                Icons.auto_awesome_rounded,
+                color: _R.gold.withValues(alpha: .16),
+                size: 160,
+              ),
             ),
-          ),
+            const Padding(
+              padding: EdgeInsets.all(21),
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '✦  من أجمل لحظات العمر',
+                    style: TextStyle(
+                      color: Color(0xFFE9D1A1),
+                      fontSize: 12,
+                    ),
+                  ),
+                  SizedBox(height: 11),
+                  Text(
+                    'لَبَّيْكَ اللَّهُمَّ لَبَّيْكَ',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 23,
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'اللهم بلّغنا بيتك الحرام واجعلها عمرةً مقبولة',
+                    style: TextStyle(
+                      color: Color(0xFFE9EDE6),
+                      fontSize: 12,
+                      height: 1.6,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
 
-// ═════════════════════════ بطاقة الخدمة ═════════════════════════
-class _ServiceTile extends StatelessWidget {
-  final _Svc svc;
+// =====================================================
+// EXTRA SERVICES
+// =====================================================
+
+class _MoreTile extends StatelessWidget {
+  const _MoreTile({
+    required this.service,
+    required this.onTap,
+  });
+
+  final _HomeService service;
   final VoidCallback onTap;
-  const _ServiceTile({required this.svc, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return _WhiteSurface(
+      onTap: onTap,
+      radius: 19,
+      child: Padding(
+        padding: const EdgeInsets.all(13),
+        child: Row(
+          children: [
+            Container(
+              width: 49,
+              height: 49,
+              decoration: BoxDecoration(
+                color: _R.softGreen,
+                borderRadius:
+                    BorderRadius.circular(15),
+              ),
+              child: Icon(
+                service.icon,
+                color: _R.green,
+                size: 25,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment:
+                    CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    service.title,
+                    style: const TextStyle(
+                      color: _R.text,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    service.subtitle,
+                    style: const TextStyle(
+                      color: _R.muted,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Icon(
+              Icons.chevron_left_rounded,
+              color: _R.gold,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// =====================================================
+// REUSABLE WHITE SURFACE
+// =====================================================
+
+class _WhiteSurface extends StatelessWidget {
+  const _WhiteSurface({
+    required this.child,
+    required this.onTap,
+    this.radius = 20,
+  });
+
+  final Widget child;
+  final VoidCallback onTap;
+  final double radius;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
       decoration: BoxDecoration(
-        color: Colors.white, // لون صريح => لا يظهر الظل داخل الكارت
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _C.border),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(radius),
+        border: Border.all(
+          color: _R.border,
+        ),
         boxShadow: [
           BoxShadow(
-            color: svc.colors.last.withOpacity(.10),
-            blurRadius: 12,
+            color: _R.deep.withValues(alpha: .055),
+            blurRadius: 15,
             offset: const Offset(0, 5),
           ),
         ],
       ),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(radius),
         child: InkWell(
-          borderRadius: BorderRadius.circular(20),
           onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    gradient: LinearGradient(
-                      begin: Alignment.topRight,
-                      end: Alignment.bottomLeft,
-                      colors: svc.colors,
-                    ),
-                  ),
-                  child: Icon(svc.icon, color: Colors.white, size: 26),
-                ),
-                const SizedBox(height: 10),
-                Flexible(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Text(svc.label,
-                        maxLines: 1,
-                        style: const TextStyle(
-                            color: _C.ink,
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w700)),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          borderRadius: BorderRadius.circular(radius),
+          child: child,
         ),
       ),
     );
   }
 }
 
-// ═════════════════════════ لافتة التلبية ═════════════════════════
-class _TalbiyahBanner extends StatelessWidget {
-  const _TalbiyahBanner();
+// The original project's Umrah screen path was not supplied.
+// A dedicated self-contained guide prevents navigating to "Lost" by mistake.
+// Once the original Umrah widget is identified, replace this route only.
+class _UmrahGuideScreen extends StatelessWidget {
+  const _UmrahGuideScreen();
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 22),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(26),
-        gradient: const LinearGradient(
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-          colors: [AppColors.greenDark, Color(0xFF083D2D)],
+    const items = <(String, String, IconData)>[
+      ('الإحرام والنية', 'استعد للنسك، وراجع الميقات ومحظورات الإحرام.', Icons.checkroom_rounded),
+      ('الطواف', 'سبعة أشواط حول الكعبة، مع مراعاة التعليمات والتنظيم.', Icons.sync_rounded),
+      ('السعي', 'سبعة أشواط بين الصفا والمروة.', Icons.directions_walk_rounded),
+      ('الحلق أو التقصير', 'أكمل النسك بالحلق أو التقصير وفق أحكامه.', Icons.content_cut_rounded),
+    ];
+
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: _R.bg,
+        appBar: AppBar(
+          title: const Text('دليل العمرة'),
+          backgroundColor: _R.bg,
+          foregroundColor: _R.deep,
         ),
-        border: Border.all(color: AppColors.gold.withOpacity(.6), width: 1.2),
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(20),
-        child: Stack(
+        body: ListView(
+          padding: const EdgeInsets.all(18),
           children: [
-            const Positioned.fill(
-              child: CustomPaint(painter: _GeometricPatternPainter()),
-            ),
-            Column(
-              children: [
-                const Text('✦',
-                    style: TextStyle(color: AppColors.gold, fontSize: 18)),
-                const SizedBox(height: 8),
-                const Text(
-                  'لَبَّيْكَ اللَّهُمَّ لَبَّيْكَ، لَبَّيْكَ لا شَرِيكَ لَكَ لَبَّيْكَ',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 17,
-                    height: 1.9,
-                    fontWeight: FontWeight.w700,
+            const Text('خطوات عمرتك', style: TextStyle(fontSize: 26, fontWeight: FontWeight.w900, color: _R.deep)),
+            const SizedBox(height: 7),
+            const Text('دليل مبسط للمراحل الأساسية، وليس بديلًا عن الإرشاد الشرعي الموثوق.', style: TextStyle(color: _R.muted, height: 1.6)),
+            const SizedBox(height: 18),
+            for (final item in items) ...[
+              Card(
+                color: Colors.white,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      CircleAvatar(backgroundColor: _R.softGreen, child: Icon(item.$3, color: _R.green)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(item.$1, style: const TextStyle(fontWeight: FontWeight.w900, color: _R.deep)),
+                            const SizedBox(height: 4),
+                            Text(item.$2, style: const TextStyle(color: _R.muted, height: 1.5)),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text('تقبّل الله منك وبلّغك بيته الحرام',
-                    style: TextStyle(
-                        color: _C.goldLight.withOpacity(.9), fontSize: 12.5)),
-              ],
-            ),
+              ),
+              const SizedBox(height: 8),
+            ],
           ],
         ),
       ),

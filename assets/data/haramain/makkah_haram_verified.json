@@ -1,0 +1,326 @@
+{
+  "schemaVersion": "1.0.0",
+  "datasetId": "rifqa_makkah_haram_verified",
+  "site": {
+    "id": "masjid_al_haram",
+    "nameAr": "المسجد الحرام",
+    "city": "مكة المكرمة",
+    "country": "المملكة العربية السعودية"
+  },
+
+  "datasetPolicy": {
+    "verifiedDataOnly": true,
+    "allowInferredCoordinates": false,
+    "allowInferredRoutes": false,
+    "navigationRequiresVerifiedRoute": true,
+    "descriptionAr": "تحتوي هذه المجموعة فقط على معلومات أمكن ربطها بمصدر رسمي. لا تعني صحة موقع أو خدمة أن مسار الوصول إليها موثق."
+  },
+
+  "verificationStatuses": [
+    "VERIFIED_POI",
+    "VERIFIED_ACCESS",
+    "VERIFIED_ROUTE",
+    "UNVERIFIED"
+  ],
+
+  "sources": [
+    {
+      "id": "haramain_accessibility",
+      "authorityAr": "الهيئة العامة للعناية بشؤون المسجد الحرام والمسجد النبوي",
+      "titleAr": "خدمات كبار السن وذوي الإعاقة",
+      "sourceType": "OFFICIAL_AUTHORITY_WEBSITE",
+      "pageKey": "haram-elderly-services-ar",
+      "verifiedAt": "2026-10-02"
+    },
+    {
+      "id": "haramain_faq",
+      "authorityAr": "الهيئة العامة للعناية بشؤون المسجد الحرام والمسجد النبوي",
+      "titleAr": "الأسئلة الشائعة",
+      "sourceType": "OFFICIAL_AUTHORITY_WEBSITE",
+      "pageKey": "faq-ar",
+      "verifiedAt": "2026-10-02"
+    }
+  ],
+
+  "accessibleGates": [
+    {
+      "id": "gate_68_accessible",
+      "gateNumber": 68,
+      "feature": "WHEELCHAIR_RAMP",
+      "verificationStatus": "VERIFIED_POI",
+      "sourceId": "haramain_accessibility",
+      "navigationAllowed": false
+    },
+    {
+      "id": "gate_74_accessible",
+      "gateNumber": 74,
+      "feature": "WHEELCHAIR_RAMP",
+      "verificationStatus": "VERIFIED_POI",
+      "sourceId": "haramain_accessibility",
+      "navigationAllowed": false
+    },
+    {
+      "id": "gate_79_accessible",
+      "gateNumber": 79,
+      "feature": "WHEELCHAIR_RAMP",
+      "verificationStatus": "VERIFIED_POI",
+      "sourceId": "haramain_accessibility",
+      "navigationAllowed": false
+    },
+    {
+      "id": "gate_84_accessible",
+      "gateNumber": 84,
+      "feature": "WHEELCHAIR_RAMP",
+      "verificationStatus": "VERIFIED_POI",
+      "sourceId": "haramain_accessibility",
+      "navigationAllowed": false
+    },
+    {
+      "id": "gate_89_accessible",
+      "gateNumber": 89,
+      "feature": "WHEELCHAIR_RAMP",
+      "verificationStatus": "VERIFIED_POI",
+      "sourceId": "haramain_accessibility",
+      "navigationAllowed": false
+    },
+    {
+      "id": "gate_90_accessible",
+      "gateNumber": 90,
+      "feature": "WHEELCHAIR_RAMP",
+      "verificationStatus": "VERIFIED_POI",
+      "sourceId": "haramain_accessibility",
+      "navigationAllowed": false
+    },
+    {
+      "id": "gate_93_accessible",
+      "gateNumber": 93,
+      "feature": "WHEELCHAIR_RAMP",
+      "verificationStatus": "VERIFIED_POI",
+      "sourceId": "haramain_accessibility",
+      "navigationAllowed": false
+    },
+    {
+      "id": "gate_94_accessible",
+      "gateNumber": 94,
+      "feature": "WHEELCHAIR_RAMP",
+      "verificationStatus": "VERIFIED_POI",
+      "sourceId": "haramain_accessibility",
+      "navigationAllowed": false
+    }
+  ],
+
+  "accessiblePrayerAreas": [
+    {
+      "id": "accessible_men_king_fahd_gate_91",
+      "gender": "MEN",
+      "areaAr": "توسعة الملك فهد",
+      "floor": "FIRST",
+      "locationDescriptionAr": "مقابل باب 91",
+      "verificationStatus": "VERIFIED_POI",
+      "sourceId": "haramain_accessibility",
+      "navigationAllowed": false
+    },
+    {
+      "id": "accessible_men_shubaikah_gate_68_first",
+      "gender": "MEN",
+      "areaAr": "توسعة الملك فهد",
+      "floor": "FIRST",
+      "locationDescriptionAr": "مقابل جسر الشبيكة عند باب 68",
+      "verificationStatus": "VERIFIED_POI",
+      "sourceId": "haramain_accessibility",
+      "navigationAllowed": false
+    },
+    {
+      "id": "accessible_men_shubaikah_gate_68_ground",
+      "gender": "MEN",
+      "floor": "GROUND",
+      "locationDescriptionAr": "بجوار سلالم الشبيكة عند باب 68",
+      "verificationStatus": "VERIFIED_POI",
+      "sourceId": "haramain_accessibility",
+      "navigationAllowed": false
+    },
+    {
+      "id": "accessible_women_gate_88",
+      "gender": "WOMEN",
+      "areaAr": "توسعة الملك فهد",
+      "floor": "GROUND",
+      "locationDescriptionAr": "باب 88",
+      "verificationStatus": "VERIFIED_POI",
+      "sourceId": "haramain_accessibility",
+      "navigationAllowed": false
+    },
+    {
+      "id": "accessible_women_gate_65",
+      "gender": "WOMEN",
+      "areaAr": "توسعة الملك فهد - الشبيكة",
+      "floor": "FIRST",
+      "locationDescriptionAr": "باب 65",
+      "verificationStatus": "VERIFIED_POI",
+      "sourceId": "haramain_accessibility",
+      "navigationAllowed": false
+    },
+    {
+      "id": "accessible_women_prayer_area_15",
+      "gender": "WOMEN",
+      "locationDescriptionAr": "مصلى 15 المطل على صحن المطاف",
+      "verificationStatus": "VERIFIED_POI",
+      "sourceId": "haramain_accessibility",
+      "navigationAllowed": false
+    },
+    {
+      "id": "accessible_women_south_courtyard",
+      "gender": "WOMEN",
+      "locationDescriptionAr": "مصلى الساحة الجنوبية - جسر أجياد",
+      "verificationStatus": "VERIFIED_POI",
+      "sourceId": "haramain_accessibility",
+      "navigationAllowed": false
+    },
+    {
+      "id": "accessible_women_west_courtyard",
+      "gender": "WOMEN",
+      "locationDescriptionAr": "مصلى الساحة الغربية - الشبيكة",
+      "verificationStatus": "VERIFIED_POI",
+      "sourceId": "haramain_accessibility",
+      "navigationAllowed": false
+    },
+    {
+      "id": "accessible_women_east_courtyard",
+      "gender": "WOMEN",
+      "locationDescriptionAr": "مصلى الساحة الشرقية",
+      "verificationStatus": "VERIFIED_POI",
+      "sourceId": "haramain_accessibility",
+      "navigationAllowed": false
+    }
+  ],
+
+  "womenServiceAccessGates": [
+    {
+      "gateNumber": 85,
+      "verificationStatus": "VERIFIED_ACCESS",
+      "sourceId": "haramain_faq",
+      "navigationAllowed": false
+    },
+    {
+      "gateNumber": 86,
+      "verificationStatus": "VERIFIED_ACCESS",
+      "sourceId": "haramain_faq",
+      "navigationAllowed": false
+    },
+    {
+      "gateNumber": 87,
+      "verificationStatus": "VERIFIED_ACCESS",
+      "sourceId": "haramain_faq",
+      "navigationAllowed": false
+    },
+    {
+      "gateNumber": 89,
+      "verificationStatus": "VERIFIED_ACCESS",
+      "sourceId": "haramain_faq",
+      "navigationAllowed": false
+    }
+  ],
+
+  "ablutionAreas": [
+    {
+      "id": "ablution_second_expansion",
+      "areaAr": "التوسعة الثانية",
+      "locationDescriptionAr": "السطح",
+      "officialAccessDescriptionAr": "الوصول بواسطة السلالم الكهربائية والمصاعد",
+      "verificationStatus": "VERIFIED_ACCESS",
+      "sourceId": "haramain_faq",
+      "navigationAllowed": false
+    },
+    {
+      "id": "ablution_east_courtyard",
+      "areaAr": "الساحة الشرقية",
+      "locationDescriptionAr": "قصر الصفا",
+      "verificationStatus": "VERIFIED_POI",
+      "sourceId": "haramain_faq",
+      "navigationAllowed": false
+    },
+    {
+      "id": "ablution_masaa_al_arqam",
+      "areaAr": "المسعى",
+      "locationDescriptionAr": "سطح الأرقم",
+      "verificationStatus": "VERIFIED_POI",
+      "sourceId": "haramain_faq",
+      "navigationAllowed": false
+    },
+    {
+      "id": "ablution_masaa_qashashiyah",
+      "areaAr": "المسعى",
+      "locationDescriptionAr": "القشاشية",
+      "verificationStatus": "VERIFIED_POI",
+      "sourceId": "haramain_faq",
+      "navigationAllowed": false
+    },
+    {
+      "id": "ablution_masaa_marwah",
+      "areaAr": "المسعى",
+      "locationDescriptionAr": "المروة",
+      "verificationStatus": "VERIFIED_POI",
+      "sourceId": "haramain_faq",
+      "navigationAllowed": false
+    },
+    {
+      "id": "ablution_west_small_market",
+      "areaAr": "الساحة الغربية",
+      "locationDescriptionAr": "سوق الصغير",
+      "verificationStatus": "VERIFIED_POI",
+      "sourceId": "haramain_faq",
+      "navigationAllowed": false
+    },
+    {
+      "id": "ablution_west_safa_towers",
+      "areaAr": "الساحة الغربية",
+      "locationDescriptionAr": "أبراج الصفا",
+      "verificationStatus": "VERIFIED_POI",
+      "sourceId": "haramain_faq",
+      "navigationAllowed": false
+    },
+    {
+      "id": "ablution_west_king_abdulaziz_waqf",
+      "areaAr": "الساحة الغربية",
+      "locationDescriptionAr": "وقف الملك عبدالعزيز",
+      "verificationStatus": "VERIFIED_POI",
+      "sourceId": "haramain_faq",
+      "navigationAllowed": false
+    }
+  ],
+
+  "officialAccessibleConnections": [
+    {
+      "id": "ajyad_bridge_to_mataf_first_floor",
+      "fromAr": "جسر أجياد في الساحة الغربية",
+      "toAr": "الدور الأول من المطاف",
+      "verificationStatus": "VERIFIED_ACCESS",
+      "sourceId": "haramain_accessibility",
+      "navigationAllowed": false,
+      "noteAr": "المصدر الرسمي يذكر هذا الاتصال، لكنه لا يوفر في البيانات المستخدمة هنا هندسة مسار كاملة خطوة بخطوة."
+    },
+    {
+      "id": "shubaikah_bridge_gate_64",
+      "locationDescriptionAr": "جسر الشبيكة جوار باب 64",
+      "verificationStatus": "VERIFIED_POI",
+      "sourceId": "haramain_accessibility",
+      "navigationAllowed": false
+    },
+    {
+      "id": "east_courtyards_to_marwah",
+      "fromAr": "الساحات الشرقية",
+      "toAr": "المروة",
+      "verificationStatus": "VERIFIED_ACCESS",
+      "sourceId": "haramain_accessibility",
+      "navigationAllowed": false,
+      "noteAr": "موثق كمسار للعربات، لكن لا توجد في هذه المجموعة إحداثيات أو تعليمات انعطاف كافية للتوجيه الآلي."
+    }
+  ],
+
+  "navigationRoutes": [],
+
+  "safety": {
+    "productionNavigationEnabled": false,
+    "reasonAr": "لم تتم إضافة أي مسارات هندسية كاملة موثقة تسمح بتوجيه المستخدم خطوة بخطوة.",
+    "fallbackAr": "اعرض المعلومات الموثقة للمستخدم دون ادعاء حساب طريق داخلي حتى تتوفر بيانات مسارات موثقة."
+  }
+}

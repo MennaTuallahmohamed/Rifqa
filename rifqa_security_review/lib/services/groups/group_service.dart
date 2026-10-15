@@ -1,0 +1,190 @@
+import 'dart:math';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+class GroupService {
+  GroupService._();
+  static final instance = GroupService._();
+  final db = FirebaseFirestore.instance;
+  final auth = FirebaseAuth.instance;
+
+  User get user {
+    final u = auth.currentUser;
+    if (u == null || u.isAnonymous || !u.emailVerified) {
+      throw StateError('يجب تسجيل الدخول بحساب مؤكّد البريد أولاً');
+    }
+    return u;
+  }
+
+  CollectionReference<Map<String, dynamic>> get groups => db.collection('groups');
+  CollectionReference<Map<String, dynamic>> get invites => db.collection('invites');
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> myGroups() => groups
+      .where('memberIds', arrayContains: user.uid)
+      .snapshots();
+
+  Future<String> createGroup(String name) async {
+    final u = user;
+    final cleaned = name.trim();
+    if (cleaned.length < 3 || cleaned.length > 70) {
+      throw StateError('اسم المجموعة من 3 إلى 70 حرفًا');
+    }
+    final doc = groups.doc();
+    await doc.set({
+      'name': cleaned,
+      'ownerId': u.uid,
+      'adminIds': [u.uid],
+      'memberIds': [u.uid],
+      'createdAt': FieldValue.serverTimestamp(),
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+    return doc.id;
+  }
+
+  String _newCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    final random = Random.secure();
+    return List.generate(12, (_) => chars[random.nextInt(chars.length)]).join();
+  }
+
+  Future<String> createInvite(String groupId) async {
+    final u = user;
+    final group = await groups.doc(groupId).get();
+    final g = group.data();
+    if (g == null || !(List.from(g['adminIds'] ?? []).contains(u.uid))) {
+      throw StateError('إنشاء الدعوات متاح للمشرفين فقط');
+    }
+    for (var i = 0; i < 4; i++) {
+      final code = _newCode();
+      try {
+        final inviteRef = invites.doc(code);
+        final created = await db.runTransaction<bool>((t) async {
+          final existing = await t.get(inviteRef);
+          if (existing.exists) return false;
+          t.set(inviteRef, {
+            'groupId': groupId,
+            'createdBy': u.uid,
+            'active': true,
+            'createdAt': FieldValue.serverTimestamp(),
+            'expiresAt': Timestamp.fromDate(
+              DateTime.now().toUtc().add(const Duration(hours: 24)),
+            ),
+          });
+          return true;
+        });
+        if (created) return code;
+      } on FirebaseException catch (e) {
+        // Permission/network errors are not collisions and must be surfaced.
+        rethrow;
+      }
+    }
+    throw StateError('تعذر إنشاء كود دعوة، حاولي مجددًا');
+  }
+
+  Future<void> revokeInvite(String code) async {
+    final u = user;
+    final inviteRef = invites.doc(code.trim().toUpperCase());
+    final snapshot = await inviteRef.get();
+    final data = snapshot.data();
+    if (data == null) throw StateError('كود الدعوة غير موجود');
+    final group = await groups.doc(data['groupId'] as String).get();
+    if (!(List.from(group.data()?['adminIds'] ?? []).contains(u.uid))) {
+      throw StateError('إلغاء الدعوة متاح للمشرفين فقط');
+    }
+    await inviteRef.update({'active': false});
+  }
+
+  Future<String> requestJoin(String rawCode) async {
+    final u = user;
+    final code = rawCode.trim().toUpperCase().replaceAll(' ', '');
+    final invite = await invites.doc(code).get();
+    final data = invite.data();
+    if (data == null || data['active'] != true ||
+        (data['expiresAt'] as Timestamp).toDate().isBefore(DateTime.now())) {
+      throw StateError('كود الدعوة غير صالح أو انتهت صلاحيته');
+    }
+    final gid = data['groupId'] as String;
+    final requestRef = groups.doc(gid).collection('join_requests').doc(u.uid);
+    if ((await requestRef.get()).exists) {
+      throw StateError('لديك طلب انضمام سابق إلى هذه المجموعة');
+    }
+    await requestRef.set({
+      'userId': u.uid,
+      'userName': u.displayName ?? u.email ?? 'عضو',
+      'inviteCode': code,
+      'status': 'pending',
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+    return gid;
+  }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> pendingRequests(String gid) =>
+      groups.doc(gid).collection('join_requests')
+          .where('status', isEqualTo: 'pending').snapshots();
+
+  Future<void> approve(String gid, String uid) async {
+    final u = user;
+    final groupRef = groups.doc(gid);
+    final requestRef = groupRef.collection('join_requests').doc(uid);
+    await db.runTransaction((t) async {
+      final gs = await t.get(groupRef);
+      final rs = await t.get(requestRef);
+      final group = gs.data();
+      final req = rs.data();
+      if (group == null || req == null || req['status'] != 'pending' ||
+          !(List.from(group['adminIds'] ?? []).contains(u.uid))) {
+        throw StateError('غير مسموح بالموافقة على هذا الطلب');
+      }
+      t.update(groupRef, {
+        'memberIds': FieldValue.arrayUnion([uid]),
+        'updatedAt': FieldValue.serverTimestamp(),
+      });
+      t.update(requestRef, {'status': 'approved'});
+    });
+  }
+
+  Stream<QuerySnapshot<Map<String, dynamic>>> messages(String gid) =>
+      groups.doc(gid).collection('messages')
+          .orderBy('createdAt', descending: true).limit(60).snapshots();
+
+  Future<void> sendMessage(String gid, String text) async {
+    final u = user;
+    final content = text.trim();
+    if (content.isEmpty || content.length > 2000) return;
+    await groups.doc(gid).collection('messages').add({
+      'senderId': u.uid,
+      'senderName': u.displayName ?? u.email ?? 'عضو',
+      'type': 'text',
+      'text': content,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> sendLocation(String gid, double lat, double lng,
+      {bool emergency = false}) async {
+    final u = user;
+    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+      throw StateError('إحداثيات غير صحيحة');
+    }
+    if (emergency) {
+      await groups.doc(gid).collection('alerts').add({
+        'senderId': u.uid,
+        'senderName': u.displayName ?? u.email ?? 'عضو',
+        'lat': lat,
+        'lng': lng,
+        'status': 'open',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    } else {
+      await groups.doc(gid).collection('messages').add({
+        'senderId': u.uid,
+        'senderName': u.displayName ?? u.email ?? 'عضو',
+        'type': 'location',
+        'lat': lat,
+        'lng': lng,
+        'text': 'موقعي الحالي',
+        'createdAt': FieldValue.serverTimestamp(),
+      });
+    }
+  }
+}

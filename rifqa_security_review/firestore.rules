@@ -1,0 +1,160 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function verified() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email is string;
+    }
+    function self(uid) { return signedIn() && request.auth.uid == uid; }
+    function verifiedSelf(uid) { return verified() && request.auth.uid == uid; }
+    function groupPath(gid) { return /databases/$(database)/documents/groups/$(gid); }
+    function requestPath(gid, uid) { return /databases/$(database)/documents/groups/$(gid)/join_requests/$(uid); }
+    function invitePath(code) { return /databases/$(database)/documents/invites/$(code); }
+    function member(gid) {
+      return verified() && exists(groupPath(gid))
+        && request.auth.uid in get(groupPath(gid)).data.memberIds;
+    }
+    function admin(gid) {
+      return member(gid) && request.auth.uid in get(groupPath(gid)).data.adminIds;
+    }
+    function changedOnly(allowed) {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(allowed);
+    }
+    function validPosition(d) {
+      return d.lat is number && d.lng is number
+        && d.lat >= -90 && d.lat <= 90
+        && d.lng >= -180 && d.lng <= 180;
+    }
+    match /users/{uid} {
+      allow get: if self(uid);
+      allow list: if false;
+      allow create: if self(uid)
+        && request.resource.data.keys().hasAll(['displayName','email','phone','phoneVerified','countryCode','createdAt'])
+        && request.resource.data.keys().hasOnly(['displayName','email','phone','phoneVerified','countryCode','createdAt'])
+        && request.resource.data.email == request.auth.token.email
+        && request.resource.data.displayName is string
+        && request.resource.data.displayName.size() <= 100
+        && request.resource.data.phone is string && request.resource.data.phone.size() <= 20
+        && request.resource.data.countryCode is string
+        && request.resource.data.phoneVerified == false
+        && request.resource.data.createdAt == request.time;
+      allow update, delete: if false;
+      match /{doc=**} { allow read, write: if false; }
+    }
+    match /groups/{gid} {
+      allow get, list: if verified() && request.auth.uid in resource.data.memberIds;
+      allow create: if verified()
+        && request.resource.data.keys().hasOnly(['name','ownerId','adminIds','memberIds','createdAt','updatedAt'])
+        && request.resource.data.keys().hasAll(['name','ownerId','adminIds','memberIds','createdAt','updatedAt'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() >= 3 && request.resource.data.name.size() <= 70
+        && request.resource.data.ownerId == request.auth.uid
+        && request.resource.data.adminIds == [request.auth.uid]
+        && request.resource.data.memberIds == [request.auth.uid]
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.updatedAt == request.time;
+      // Approval must happen atomically with marking the corresponding request approved.
+      allow update: if admin(gid)
+        && changedOnly(['memberIds','updatedAt'])
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.memberIds is list
+        && request.resource.data.memberIds.size() == resource.data.memberIds.size() + 1
+        && request.resource.data.memberIds.hasAll(resource.data.memberIds)
+        && resource.data.memberIds.hasAll(resource.data.adminIds)
+        && request.resource.data.memberIds.size() <= 200
+        && !(request.resource.data.memberIds[request.resource.data.memberIds.size() - 1] in resource.data.memberIds)
+        && exists(requestPath(gid, request.resource.data.memberIds[request.resource.data.memberIds.size() - 1]))
+        && get(requestPath(gid, request.resource.data.memberIds[request.resource.data.memberIds.size() - 1])).data.status == 'pending'
+        && getAfter(requestPath(gid, request.resource.data.memberIds[request.resource.data.memberIds.size() - 1])).data.status == 'approved';
+      allow delete: if false;
+      match /join_requests/{uid} {
+        allow get: if admin(gid) || self(uid);
+        allow list: if admin(gid);
+        allow create: if verifiedSelf(uid)
+          && request.resource.data.keys().hasOnly(['userId','userName','inviteCode','status','createdAt'])
+          && request.resource.data.keys().hasAll(['userId','userName','inviteCode','status','createdAt'])
+          && request.resource.data.userId == uid
+          && request.resource.data.userName is string
+          && request.resource.data.userName.size() <= 150
+          && request.resource.data.inviteCode is string
+          && request.resource.data.status == 'pending'
+          && request.resource.data.createdAt == request.time
+          && exists(invitePath(request.resource.data.inviteCode))
+          && get(invitePath(request.resource.data.inviteCode)).data.groupId == gid
+          && get(invitePath(request.resource.data.inviteCode)).data.active == true
+          && get(invitePath(request.resource.data.inviteCode)).data.expiresAt > request.time
+          && !(uid in get(groupPath(gid)).data.memberIds);
+        allow update: if admin(gid)
+          && resource.data.status == 'pending'
+          && changedOnly(['status'])
+          && request.resource.data.status == 'approved'
+          && uid in getAfter(groupPath(gid)).data.memberIds
+          && !(uid in get(groupPath(gid)).data.memberIds);
+        allow delete: if false;
+      }
+      match /messages/{mid} {
+        allow get, list: if member(gid);
+        allow create: if member(gid)
+          && request.resource.data.keys().hasAll(['senderId','senderName','type','text','createdAt'])
+          && request.resource.data.senderId == request.auth.uid
+          && request.resource.data.senderName is string
+          && request.resource.data.senderName.size() <= 150
+          && request.resource.data.createdAt == request.time
+          && (
+            (request.resource.data.type == 'text'
+              && request.resource.data.keys().hasOnly(['senderId','senderName','type','text','createdAt'])
+              && request.resource.data.text is string
+              && request.resource.data.text.size() > 0
+              && request.resource.data.text.size() <= 2000)
+            ||
+            (request.resource.data.type == 'location'
+              && request.resource.data.keys().hasOnly(['senderId','senderName','type','text','lat','lng','createdAt'])
+              && request.resource.data.text is string
+              && request.resource.data.text.size() <= 100
+              && validPosition(request.resource.data))
+          );
+        allow update, delete: if false;
+      }
+      match /alerts/{aid} {
+        allow get, list: if member(gid);
+        allow create: if member(gid)
+          && request.resource.data.keys().hasOnly(['senderId','senderName','lat','lng','status','createdAt'])
+          && request.resource.data.keys().hasAll(['senderId','senderName','lat','lng','status','createdAt'])
+          && request.resource.data.senderId == request.auth.uid
+          && request.resource.data.senderName is string
+          && request.resource.data.senderName.size() <= 150
+          && validPosition(request.resource.data)
+          && request.resource.data.status == 'open'
+          && request.resource.data.createdAt == request.time;
+        allow update, delete: if false;
+      }
+      match /{other=**} { allow read, write: if false; }
+    }
+    match /invites/{code} {
+      // Someone holding the random code can inspect only that invite, not enumerate invites.
+      allow get: if verified();
+      allow list: if false;
+      allow create: if verified()
+        && code.matches('[A-HJ-NP-Z2-9]{12}')
+        && request.resource.data.keys().hasOnly(['groupId','createdBy','active','createdAt','expiresAt'])
+        && request.resource.data.keys().hasAll(['groupId','createdBy','active','createdAt','expiresAt'])
+        && request.resource.data.groupId is string
+        && admin(request.resource.data.groupId)
+        && request.resource.data.createdBy == request.auth.uid
+        && request.resource.data.active == true
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.expiresAt is timestamp
+        && request.resource.data.expiresAt > request.time
+        && request.resource.data.expiresAt <= request.time + duration.value(25, 'h');
+      allow update: if verified()
+        && admin(resource.data.groupId)
+        && changedOnly(['active'])
+        && resource.data.active == true
+        && request.resource.data.active == false;
+      allow delete: if false;
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

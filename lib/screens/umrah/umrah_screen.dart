@@ -6,6 +6,9 @@ import '../../core/widgets/ui.dart';
 import '../../state/app_state.dart';
 import 'umrah_data.dart';
 import 'umrah_tools.dart';
+import 'umrah_voice.dart';
+import 'umrah_art.dart';
+import 'umrah_3d.dart';
 
 class _Tool {
   final String label;
@@ -24,9 +27,39 @@ class UmrahScreen extends StatefulWidget {
 class _UmrahScreenState extends State<UmrahScreen> {
   int tab = 0;
   double duaScale = 1.0;
+  bool _touring = false;
+
+  @override
+  void dispose() {
+    UVoice.I.stop();
+    super.dispose();
+  }
+
+  void _stopAudio() {
+    _touring = false;
+    UVoice.I.stop();
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _startTour() async {
+    final st = AppScope.of(context);
+    setState(() => _touring = true);
+    for (int k = st.step; k < 7 && _touring; k++) {
+      st.change(() => st.step = k);
+      final ok = await UVoice.I.speak(stepNarration(umrahGuide[k], k));
+      if (!ok || !_touring || !mounted) break;
+      final ok2 =
+          await UVoice.I.speak('الدعاء: ${umrahGuide[k].dua}', rate: .36);
+      if (!ok2 || !_touring || !mounted) break;
+    }
+    if (mounted) setState(() => _touring = false);
+  }
+
   int _lastStep = -1;
 
   static const _tools = <_Tool>[
+    _Tool('طواف 3D', Icons.view_in_ar_rounded, UC.emerald, Tawaf3DPage()),
+    _Tool('سعي 3D', Icons.directions_walk_rounded, UC.plum, Sai3DPage()),
     _Tool('المواقيت', Icons.explore_rounded, UC.sky, MawaqitPage()),
     _Tool('المحظورات', Icons.block_rounded, UC.rose, IhramRulesPage()),
     _Tool('أسئلة شائعة', Icons.help_rounded, UC.plum, FaqPage()),
@@ -45,9 +78,11 @@ class _UmrahScreenState extends State<UmrahScreen> {
     }
     final doneCount = st.done.length;
 
-    return Container(
-      color: UC.ivory,
-      child: ListView(
+    return Scaffold(
+      backgroundColor: UC.ivory,
+      body: Container(
+        color: UC.ivory,
+        child: ListView(
         padding: EdgeInsets.zero,
         physics: const BouncingScrollPhysics(),
         children: [
@@ -93,7 +128,10 @@ class _UmrahScreenState extends State<UmrahScreen> {
             child: _PathRow(
               current: i,
               isDone: (k) => st.done.contains(k),
-              onTap: (k) => st.change(() => st.step = k),
+              onTap: (k) {
+                _stopAudio();
+                st.change(() => st.step = k);
+              },
             ),
           ),
           const SizedBox(height: 14),
@@ -126,7 +164,8 @@ class _UmrahScreenState extends State<UmrahScreen> {
                             ),
                           ],
                         ),
-                        child: Text(s.emoji, style: const TextStyle(fontSize: 28)),
+                        child:
+                            Text(s.emoji, style: const TextStyle(fontSize: 28)),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
@@ -157,10 +196,20 @@ class _UmrahScreenState extends State<UmrahScreen> {
                     ],
                   ),
                   const SizedBox(height: 12),
+                  UStepArt(index: i, colors: s.colors),
+                  const SizedBox(height: 12),
                   Text(s.summary,
                       style: const TextStyle(
                           color: UC.muted, fontSize: 14, height: 1.5)),
                   const SizedBox(height: 16),
+                  _VoiceBar(
+                    touring: _touring,
+                    onExplain: () => UVoice.I.speak(stepNarration(s, i)),
+                    onDua: () => UVoice.I.speak(s.dua, rate: .36),
+                    onTour: _startTour,
+                    onStop: _stopAudio,
+                  ),
+                  const SizedBox(height: 14),
                   _Tabs(sel: tab, on: (k) => setState(() => tab = k)),
                   const SizedBox(height: 14),
                   AnimatedSwitcher(
@@ -179,7 +228,20 @@ class _UmrahScreenState extends State<UmrahScreen> {
             const SizedBox(height: 12),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: CounterCard(type: s.sim!),
+              child: Column(
+                children: [
+                  _Open3D(
+                    label: s.sim == 'tawaf'
+                        ? 'جرّب الطواف حول الكعبة بالـ3D'
+                        : 'جرّب السعي بين الصفا والمروة بالـ3D',
+                    page: s.sim == 'tawaf'
+                        ? const Tawaf3DPage()
+                        : const Sai3DPage(),
+                  ),
+                  const SizedBox(height: 12),
+                  CounterCard(type: s.sim!),
+                ],
+              ),
             ),
           ],
 
@@ -213,15 +275,21 @@ class _UmrahScreenState extends State<UmrahScreen> {
                       shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(16)),
                     ),
-                    onPressed: () => st.change(() => st.step--),
+                    onPressed: () {
+                      _stopAudio();
+                      st.change(() => st.step--);
+                    },
                     child: const Text('السابقة'),
                   ),
                   const SizedBox(width: 10),
                 ],
                 Expanded(
                   child: PrimaryButton(
-                    i < 6 ? 'تمّت هذه الخطوة ← التالية' : 'أتممت العمرة، تقبّل الله',
+                    i < 6
+                        ? 'تمّت هذه الخطوة ← التالية'
+                        : 'أتممت العمرة، تقبّل الله',
                     onTap: () {
+                      _stopAudio();
                       HapticFeedback.lightImpact();
                       st.change(() {
                         st.done.add(st.step);
@@ -242,6 +310,7 @@ class _UmrahScreenState extends State<UmrahScreen> {
             ),
           ),
         ],
+        ),
       ),
     );
   }
@@ -325,7 +394,8 @@ class _UmrahScreenState extends State<UmrahScreen> {
           child: Stack(
             children: [
               Positioned.fill(
-                child: CustomPaint(painter: const UPatternPainter(opacity: .06)),
+                child:
+                    CustomPaint(painter: const UPatternPainter(opacity: .06)),
               ),
               Column(
                 children: [
@@ -441,8 +511,7 @@ class _UmrahScreenState extends State<UmrahScreen> {
                       const Text('✅ '),
                       Expanded(
                         child: Text(e.right,
-                            style: const TextStyle(
-                                color: UC.ink, height: 1.5)),
+                            style: const TextStyle(color: UC.ink, height: 1.5)),
                       ),
                     ],
                   ),
@@ -555,7 +624,9 @@ class _HeroChip extends StatelessWidget {
         ),
         child: Text(text,
             style: const TextStyle(
-                color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w600)),
       );
 }
 
@@ -736,13 +807,9 @@ class _Node extends StatelessWidget {
             ? const LinearGradient(
                 colors: [AppColors.green, AppColors.greenDark])
             : null,
-        color: current
-            ? null
-            : (done ? AppColors.gold : Colors.white),
+        color: current ? null : (done ? AppColors.gold : Colors.white),
         border: Border.all(
-          color: current
-              ? AppColors.gold
-              : (done ? AppColors.gold : UC.border),
+          color: current ? AppColors.gold : (done ? AppColors.gold : UC.border),
           width: current ? 2.5 : 1.5,
         ),
         boxShadow: current
@@ -775,8 +842,8 @@ class _Badge extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-        decoration:
-            BoxDecoration(color: color, borderRadius: BorderRadius.circular(20)),
+        decoration: BoxDecoration(
+            color: color, borderRadius: BorderRadius.circular(20)),
         child: Text(text,
             style: const TextStyle(
                 color: UC.ink, fontSize: 12, fontWeight: FontWeight.w700)),
@@ -859,7 +926,8 @@ class _Congrats extends StatelessWidget {
                   fontSize: 19,
                   fontWeight: FontWeight.w900)),
           const SizedBox(height: 4),
-          const Text('أتممت الخطوات السبع. نسأل الله أن يجعلها مبرورة وذنبك مغفورًا.',
+          const Text(
+              'أتممت الخطوات السبع. نسأل الله أن يجعلها مبرورة وذنبك مغفورًا.',
               textAlign: TextAlign.center,
               style: TextStyle(color: Colors.white, height: 1.5)),
           TextButton(
@@ -1033,11 +1101,12 @@ class CounterCard extends StatelessWidget {
 }
 
 void _paintLabel(Canvas c, String t, Offset center,
-    {double size = 11, Color color = UC.muted, FontWeight w = FontWeight.w700}) {
+    {double size = 11,
+    Color color = UC.muted,
+    FontWeight w = FontWeight.w700}) {
   final tp = TextPainter(
     text: TextSpan(
-        text: t,
-        style: TextStyle(fontSize: size, color: color, fontWeight: w)),
+        text: t, style: TextStyle(fontSize: size, color: color, fontWeight: w)),
     textDirection: TextDirection.rtl,
   )..layout();
   tp.paint(c, center - Offset(tp.width / 2, tp.height / 2));
@@ -1082,7 +1151,9 @@ class TawafPainter extends CustomPainter {
 
     // خط البداية: الحجر الأسود
     final start = Offset(center.dx, center.dy - radius);
-    c.drawLine(start.translate(0, -12), start.translate(0, 12),
+    c.drawLine(
+        start.translate(0, -12),
+        start.translate(0, 12),
         Paint()
           ..color = const Color(0xFF2E9D6F)
           ..strokeWidth = 3);
@@ -1090,8 +1161,8 @@ class TawafPainter extends CustomPainter {
 
     // الطائف
     final ang = -math.pi / 2 - 2 * math.pi * frac;
-    final pos = Offset(center.dx + radius * math.cos(ang),
-        center.dy + radius * math.sin(ang));
+    final pos = Offset(
+        center.dx + radius * math.cos(ang), center.dy + radius * math.sin(ang));
     c.drawCircle(pos, 11, Paint()..color = Colors.white);
     c.drawCircle(pos, 8, Paint()..color = AppColors.green);
 
@@ -1137,8 +1208,7 @@ class SaiPainter extends CustomPainter {
         ..close();
       c.drawPath(tri, Paint()..color = const Color(0xFF8A7A5A));
     }
-    _paintLabel(c, 'الصفا', Offset(pad, y - 48),
-        size: 12, color: UC.ink);
+    _paintLabel(c, 'الصفا', Offset(pad, y - 48), size: 12, color: UC.ink);
     _paintLabel(c, 'المروة', Offset(s.width - pad, y - 48),
         size: 12, color: UC.ink);
 
@@ -1151,4 +1221,166 @@ class SaiPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant SaiPainter old) => old.n != n;
+}
+
+// ═══════════════════════ الصوت و 3D ═══════════════════════
+class _VoiceBar extends StatelessWidget {
+  final bool touring;
+  final VoidCallback onExplain, onDua, onTour, onStop;
+  const _VoiceBar({
+    required this.touring,
+    required this.onExplain,
+    required this.onDua,
+    required this.onTour,
+    required this.onStop,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<bool>(
+      valueListenable: UVoice.I.speaking,
+      builder: (context, sp, _) => Container(
+        padding: const EdgeInsets.all(10),
+        decoration: BoxDecoration(
+          color: AppColors.softGreen,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                _VBtn(
+                  icon: sp ? Icons.stop_rounded : Icons.play_arrow_rounded,
+                  label: sp ? 'إيقاف' : 'اسمع الشرح',
+                  on: sp ? onStop : onExplain,
+                  filled: true,
+                ),
+                const SizedBox(width: 8),
+                _VBtn(
+                    icon: Icons.front_hand_rounded, label: 'الدعاء', on: onDua),
+                const SizedBox(width: 8),
+                _VBtn(
+                  icon: touring
+                      ? Icons.stop_circle_rounded
+                      : Icons.headphones_rounded,
+                  label: touring ? 'إنهاء الجولة' : 'جولة صوتية',
+                  on: touring ? onStop : onTour,
+                ),
+              ],
+            ),
+            ValueListenableBuilder<bool>(
+              valueListenable: UVoice.I.arabicMissing,
+              builder: (context, miss, _) => miss
+                  ? const Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Text(
+                          'لم نجد صوتًا عربيًا في جهازك. ثبّت "Google Text-to-speech" وحمّل الصوت العربي من إعدادات الجهاز.',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              color: UC.muted, fontSize: 11.5, height: 1.5)),
+                    )
+                  : const SizedBox.shrink(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _VBtn extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback on;
+  final bool filled;
+  const _VBtn(
+      {required this.icon,
+      required this.label,
+      required this.on,
+      this.filled = false});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: on,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            gradient: filled
+                ? const LinearGradient(
+                    colors: [AppColors.green, AppColors.greenDark])
+                : null,
+            color: filled ? null : Colors.white,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Column(
+            children: [
+              Icon(icon,
+                  size: 22, color: filled ? Colors.white : AppColors.greenDark),
+              const SizedBox(height: 2),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(label,
+                    style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                        color: filled ? Colors.white : UC.ink)),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _Open3D extends StatelessWidget {
+  final String label;
+  final Widget page;
+  const _Open3D({required this.label, required this.page});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: () =>
+          Navigator.push(context, MaterialPageRoute(builder: (_) => page)),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(22),
+          gradient: const LinearGradient(
+            begin: Alignment.topRight,
+            end: Alignment.bottomLeft,
+            colors: [AppColors.green, Color(0xFF083D2D)],
+          ),
+          border: Border.all(color: AppColors.gold, width: 1.4),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.greenDark.withOpacity(.3),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.view_in_ar_rounded,
+                color: AppColors.gold, size: 30),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(label,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800)),
+            ),
+            const Icon(Icons.arrow_back_ios_new_rounded,
+                color: Colors.white, size: 16),
+          ],
+        ),
+      ),
+    );
+  }
 }

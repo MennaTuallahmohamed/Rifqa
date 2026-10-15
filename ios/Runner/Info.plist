@@ -8,6 +8,12 @@
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
 	<string>Rafeek</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>يحتاج التطبيق إلى موقعك لعرض مكانك وتقديم الاتجاهات داخل الحرمين.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>نستخدم الميكروفون لتسجيل سؤالك الصوتي لرفقة.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>نحوّل سؤالك الصوتي إلى نص لتتمكن رفقة من الإجابة.</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

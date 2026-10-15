@@ -172,7 +172,9 @@ class _MiqatPainter extends CustomPainter {
 
     // الشمال
     _label(c, 'شمال', Offset(center.dx, center.dy - 138), 11, UC.muted);
-    c.drawLine(Offset(center.dx, center.dy - 128), Offset(center.dx, center.dy - 120),
+    c.drawLine(
+        Offset(center.dx, center.dy - 128),
+        Offset(center.dx, center.dy - 120),
         Paint()
           ..color = UC.muted
           ..strokeWidth = 2);
@@ -191,8 +193,8 @@ class _MiqatPainter extends CustomPainter {
     // المواقيت
     for (final p in _pts) {
       final rad = p.$2 * math.pi / 180;
-      final pos = Offset(center.dx + p.$3 * math.sin(rad),
-          center.dy - p.$3 * math.cos(rad));
+      final pos = Offset(
+          center.dx + p.$3 * math.sin(rad), center.dy - p.$3 * math.cos(rad));
       c.drawLine(
           center,
           pos,
@@ -581,7 +583,8 @@ class _QuizPageState extends State<QuizPage> {
                   borderRadius: BorderRadius.circular(16)),
             ),
             onPressed: _next,
-            child: Text(i < umrahQuiz.length - 1 ? 'السؤال التالي' : 'عرض النتيجة'),
+            child: Text(
+                i < umrahQuiz.length - 1 ? 'السؤال التالي' : 'عرض النتيجة'),
           ),
         ],
         const SizedBox(height: 20),
@@ -621,7 +624,9 @@ class _QuizPageState extends State<QuizPage> {
             Expanded(
               child: Text(q.options[k],
                   style: const TextStyle(
-                      color: UC.ink, fontSize: 15.5, fontWeight: FontWeight.w600)),
+                      color: UC.ink,
+                      fontSize: 15.5,
+                      fontWeight: FontWeight.w600)),
             ),
             if (icon != null)
               Icon(icon,
@@ -643,8 +648,7 @@ class ChecklistPage extends StatefulWidget {
 class _ChecklistPageState extends State<ChecklistPage> {
   final Set<String> _checked = {};
 
-  int get _total =>
-      umrahChecklist.values.fold<int>(0, (a, b) => a + b.length);
+  int get _total => umrahChecklist.values.fold<int>(0, (a, b) => a + b.length);
 
   @override
   Widget build(BuildContext context) {

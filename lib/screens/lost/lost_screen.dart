@@ -65,7 +65,6 @@ class _LostScreenState extends State<LostScreen> {
               ],
             ),
           ),
-
           Padding(
             padding: const EdgeInsets.all(14),
             child: place == null
@@ -108,7 +107,6 @@ class _LostScreenState extends State<LostScreen> {
             ],
           ),
         ),
-
         AppCard(
           child: const Text(
             '💡 قواعد ذهبية\n'
@@ -138,7 +136,6 @@ class _LostScreenState extends State<LostScreen> {
             ),
           ),
         ),
-
         AppCard(
           child: Column(
             children: [
@@ -151,7 +148,6 @@ class _LostScreenState extends State<LostScreen> {
               const SizedBox(height: 5),
               const Text('سيصلهم موقعك الحالي'),
               const SizedBox(height: 12),
-
               PrimaryButton(
                 'أرسل موقعي للمجموعة',
                 onTap: () {
@@ -165,7 +161,6 @@ class _LostScreenState extends State<LostScreen> {
             ],
           ),
         ),
-
         PrimaryButton(
           '🪪 أعرض بطاقة «أنا تائه» لمن حولي',
           red: true,
@@ -173,9 +168,7 @@ class _LostScreenState extends State<LostScreen> {
             _showLostCard(context);
           },
         ),
-
         const SizedBox(height: 8),
-
         PrimaryButton(
           'رجوع',
           outline: true,
