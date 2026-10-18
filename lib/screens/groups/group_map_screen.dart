@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../services/groups/group_service.dart';
 import 'groups_screen.dart' show friendlyError, ago;
+import 'rifqa_chat_theme.dart';
 
 class _Pin {
   final String id;
@@ -28,7 +29,8 @@ class _Pin {
 class GroupMapScreen extends StatefulWidget {
   final String groupId;
   final String groupName;
-  const GroupMapScreen({super.key, required this.groupId, required this.groupName});
+  const GroupMapScreen(
+      {super.key, required this.groupId, required this.groupName});
   @override
   State<GroupMapScreen> createState() => _GroupMapScreenState();
 }
@@ -50,7 +52,10 @@ class _GroupMapScreenState extends State<GroupMapScreen> {
       final exp = m['expiresAt'] as Timestamp?;
       final lat = (m['lat'] as num?)?.toDouble();
       final lng = (m['lng'] as num?)?.toDouble();
-      if (exp == null || !exp.toDate().isAfter(now) || lat == null || lng == null) {
+      if (exp == null ||
+          !exp.toDate().isAfter(now) ||
+          lat == null ||
+          lng == null) {
         continue;
       }
       pins.add(_Pin(
@@ -98,34 +103,54 @@ class _GroupMapScreenState extends State<GroupMapScreen> {
         'https://www.google.com/maps/dir/?api=1&destination=${p.point.latitude},${p.point.longitude}');
     final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
     if (!ok && mounted) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('تعذر فتح تطبيق الخرائط')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تعذر فتح تطبيق الخرائط')));
     }
   }
 
   Marker markerFor(_Pin p) {
     final color = p.alert
-        ? Colors.red
-        : (p.mine ? Colors.green.shade700 : Colors.blue.shade700);
+        ? const Color(0xFFC8352F)
+        : (p.mine ? const Color(0xFF2777C9) : RifqaChat.emerald);
     return Marker(
-      point: p.point,
-      width: 48,
-      height: 48,
-      child: GestureDetector(
-        onTap: () => setState(() => selected = p),
-        child: Icon(
-          p.alert ? Icons.sos : Icons.location_on,
-          color: color,
-          size: p.alert ? 40 : 44,
-        ),
-      ),
-    );
+        point: p.point,
+        width: 57,
+        height: 62,
+        child: GestureDetector(
+            onTap: () => setState(() => selected = p),
+            child: Stack(alignment: Alignment.topCenter, children: [
+              Icon(Icons.location_on_rounded,
+                  size: 58,
+                  color: color,
+                  shadows: const [
+                    Shadow(color: Colors.black26, blurRadius: 5)
+                  ]),
+              Positioned(
+                  top: 8,
+                  child: CircleAvatar(
+                      radius: 17,
+                      backgroundColor: RifqaChat.paper,
+                      child: Icon(
+                          p.alert
+                              ? Icons.sos_rounded
+                              : (p.mine
+                                  ? Icons.person_rounded
+                                  : Icons.people_alt_rounded),
+                          size: 19,
+                          color: color))),
+            ])));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('خريطة ${widget.groupName}')),
+      appBar: AppBar(
+          backgroundColor: RifqaChat.deep,
+          foregroundColor: Colors.white,
+          elevation: 0,
+          centerTitle: true,
+          title: Text('خريطة ${widget.groupName}',
+              maxLines: 1, overflow: TextOverflow.ellipsis)),
       floatingActionButton: FloatingActionButton.small(
         tooltip: 'عرض الكل',
         onPressed: fitAll,
@@ -133,11 +158,14 @@ class _GroupMapScreenState extends State<GroupMapScreen> {
       ),
       body: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
         stream: service.locations(widget.groupId),
-        builder: (context, ls) => StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+        builder: (context, ls) =>
+            StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
           stream: service.alerts(widget.groupId),
           builder: (context, als) {
-            if (ls.hasError) return Center(child: Text(friendlyError(ls.error!)));
-            if (als.hasError) return Center(child: Text(friendlyError(als.error!)));
+            if (ls.hasError)
+              return Center(child: Text(friendlyError(ls.error!)));
+            if (als.hasError)
+              return Center(child: Text(friendlyError(als.error!)));
             if (!ls.hasData || !als.hasData) {
               return const Center(child: CircularProgressIndicator());
             }
@@ -149,8 +177,9 @@ class _GroupMapScreenState extends State<GroupMapScreen> {
               FlutterMap(
                 mapController: controller,
                 options: MapOptions(
-                  initialCenter:
-                      pts.length == 1 ? pts.first : const LatLng(21.4225, 39.8262),
+                  initialCenter: pts.length == 1
+                      ? pts.first
+                      : const LatLng(21.4225, 39.8262),
                   initialZoom: pts.length == 1 ? 16 : 13,
                   initialCameraFit: pts.length >= 2
                       ? CameraFit.coordinates(
@@ -162,22 +191,66 @@ class _GroupMapScreenState extends State<GroupMapScreen> {
                 ),
                 children: [
                   TileLayer(
-                    urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    urlTemplate:
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                     // غيّريه لـ applicationId بتاع تطبيقك
-                    userAgentPackageName: 'com.example.rifqa',
+                    userAgentPackageName: 'com.example.rafeek',
                   ),
                   MarkerLayer(markers: pins.map(markerFor).toList()),
-                  const SimpleAttributionWidget(source: Text('© OpenStreetMap')),
+                  const SimpleAttributionWidget(
+                      source: Text('© OpenStreetMap')),
                 ],
               ),
+              Positioned(
+                  top: 12,
+                  left: 12,
+                  right: 12,
+                  child: Material(
+                      color: RifqaChat.paper,
+                      elevation: 4,
+                      borderRadius: BorderRadius.circular(20),
+                      child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 14, vertical: 12),
+                          child: Row(children: [
+                            Container(
+                                width: 38,
+                                height: 38,
+                                decoration: BoxDecoration(
+                                    color: RifqaChat.lightGreen,
+                                    borderRadius: BorderRadius.circular(12)),
+                                child: const Icon(Icons.groups_rounded,
+                                    color: RifqaChat.deep)),
+                            const SizedBox(width: 10),
+                            Expanded(
+                                child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                  Text(
+                                      '${pins.where((p) => !p.alert).length} يشاركون موقعهم الآن',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                          color: RifqaChat.deep)),
+                                  const Text(
+                                      'مواقع حقيقية يتم تحديثها من المجموعة',
+                                      style: TextStyle(
+                                          fontSize: 11,
+                                          color: RifqaChat.muted)),
+                                ])),
+                            if (pins.any((p) => p.alert))
+                              const Icon(Icons.warning_amber_rounded,
+                                  color: Colors.red),
+                          ])))),
               if (pins.isEmpty)
                 const Align(
-                  alignment: Alignment.topCenter,
+                  alignment: Alignment.center,
                   child: Card(
                     margin: EdgeInsets.all(16),
                     child: Padding(
                       padding: EdgeInsets.all(12),
-                      child: Text('لا أحد يشارك موقعه الآن ولا توجد استغاثات مفتوحة'),
+                      child: Text(
+                          'لا أحد يشارك موقعه الآن ولا توجد استغاثات مفتوحة'),
                     ),
                   ),
                 ),
@@ -191,7 +264,8 @@ class _GroupMapScreenState extends State<GroupMapScreen> {
                       padding: const EdgeInsets.all(12),
                       child: Column(mainAxisSize: MainAxisSize.min, children: [
                         ListTile(
-                          leading: Icon(sel.alert ? Icons.sos : Icons.person_pin_circle,
+                          leading: Icon(
+                              sel.alert ? Icons.sos : Icons.person_pin_circle,
                               color: sel.alert ? Colors.red : null),
                           title: Text(sel.title),
                           subtitle: Text(sel.subtitle),
@@ -204,9 +278,11 @@ class _GroupMapScreenState extends State<GroupMapScreen> {
                             child: OutlinedButton.icon(
                               onPressed: () {
                                 Clipboard.setData(ClipboardData(
-                                    text: '${sel.point.latitude},${sel.point.longitude}'));
+                                    text:
+                                        '${sel.point.latitude},${sel.point.longitude}'));
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                    const SnackBar(content: Text('تم نسخ الإحداثيات')));
+                                    const SnackBar(
+                                        content: Text('تم نسخ الإحداثيات')));
                               },
                               icon: const Icon(Icons.copy),
                               label: const Text('نسخ'),

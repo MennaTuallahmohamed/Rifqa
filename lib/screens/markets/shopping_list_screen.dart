@@ -1,665 +1,220 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:share_plus/share_plus.dart';
+
+import 'widgets/rifqa_market_style.dart';
 
 class ShoppingListScreen extends StatefulWidget {
   const ShoppingListScreen({super.key});
-
   @override
   State<ShoppingListScreen> createState() => _ShoppingListScreenState();
 }
 
+class _ShoppingEntry {
+  _ShoppingEntry({required this.name, this.done = false});
+  final String name;
+  bool done;
+  Map<String, dynamic> toJson() => {'name': name, 'done': done};
+  factory _ShoppingEntry.fromJson(dynamic data) {
+    final item = Map<String, dynamic>.from(data as Map);
+    return _ShoppingEntry(name: (item['name'] ?? '').toString(), done: item['done'] == true);
+  }
+}
+
 class _ShoppingListScreenState extends State<ShoppingListScreen> {
-  static const Color _green = Color(0xFF176B52);
-  static const Color _greenDark = Color(0xFF0D4D3B);
-  static const Color _gold = Color(0xFFD5AE5B);
-  static const Color _background = Color(0xFFFAF7F0);
-  static const Color _ink = Color(0xFF17322A);
-  static const Color _muted = Color(0xFF6B7B74);
-  static const Color _border = Color(0xFFEDE7D6);
-
-  final TextEditingController _controller = TextEditingController();
-
-  final List<_ShoppingItem> _items = [
-    _ShoppingItem(
-      name: 'تمر عجوة',
-      emoji: '🌴',
-    ),
-    _ShoppingItem(
-      name: 'سجادة صلاة',
-      emoji: '🕌',
-    ),
-    _ShoppingItem(
-      name: 'هدايا للعائلة',
-      emoji: '🎁',
-    ),
-    _ShoppingItem(
-      name: 'عطر أو بخور',
-      emoji: '🌸',
-    ),
-    _ShoppingItem(
-      name: 'سبحة',
-      emoji: '📿',
-    ),
-    _ShoppingItem(
-      name: 'عباية أو ملابس',
-      emoji: '👗',
-    ),
-    _ShoppingItem(
-      name: 'حلويات',
-      emoji: '🍬',
-    ),
-    _ShoppingItem(
-      name: 'احتياجات شخصية',
-      emoji: '🛍️',
-    ),
+  static const String _storageKey = 'rifqa_premium_shopping_list_v1';
+  static const _starter = [
+    'تمر عجوة', 'سجادة صلاة', 'هدايا للعائلة', 'عطر أو بخور',
+    'سبحة', 'عباية أو ملابس', 'حلويات', 'احتياجات شخصية',
   ];
+  final TextEditingController _input = TextEditingController();
+  List<_ShoppingEntry> _items = [];
+  bool _busy = true;
 
-  int get _completedCount {
-    return _items.where((item) => item.completed).length;
-  }
+  @override
+  void initState() { super.initState(); _load(); }
+  @override
+  void dispose() { _input.dispose(); super.dispose(); }
 
-  double get _progress {
-    if (_items.isEmpty) {
-      return 0;
+  Future<void> _load() async {
+    try {
+      final pref = await SharedPreferences.getInstance();
+      final raw = pref.getString(_storageKey);
+      final parsed = raw == null
+          ? _starter.map((name) => _ShoppingEntry(name: name)).toList()
+          : (jsonDecode(raw) as List).map(_ShoppingEntry.fromJson).toList();
+      if (mounted) setState(() { _items = parsed; _busy = false; });
+      if (raw == null) await _save();
+    } catch (_) {
+      if (mounted) setState(() { _items = _starter.map((n) => _ShoppingEntry(name: n)).toList(); _busy = false; });
     }
-
-    return _completedCount / _items.length;
   }
 
-  void _toggleItem(int index) {
-    setState(() {
-      _items[index].completed = !_items[index].completed;
-    });
+  Future<void> _save() async {
+    final pref = await SharedPreferences.getInstance();
+    await pref.setString(_storageKey, jsonEncode(_items.map((e) => e.toJson()).toList()));
   }
 
-  void _removeItem(int index) {
-    final removedItem = _items[index];
-
-    setState(() {
-      _items.removeAt(index);
-    });
-
-    ScaffoldMessenger.of(context).hideCurrentSnackBar();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          'تم حذف "${removedItem.name}"',
-        ),
-        action: SnackBarAction(
-          label: 'تراجع',
-          onPressed: () {
-            setState(() {
-              _items.insert(index, removedItem);
-            });
-          },
-        ),
-      ),
-    );
-  }
-
-  void _addItem() {
-    final value = _controller.text.trim();
-
-    if (value.isEmpty) {
+  void _add(String name) {
+    final text = name.trim();
+    if (text.isEmpty) return;
+    if (_items.any((e) => e.name == text)) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('العنصر موجود بالفعل في القائمة')));
       return;
     }
-
-    setState(() {
-      _items.add(
-        _ShoppingItem(
-          name: value,
-          emoji: '🛍️',
-        ),
-      );
-    });
-
-    _controller.clear();
+    setState(() { _items.add(_ShoppingEntry(name: text)); });
+    _input.clear();
     FocusScope.of(context).unfocus();
+    _save();
   }
 
-  void _clearCompleted() {
-    setState(() {
-      _items.removeWhere(
-        (item) => item.completed,
-      );
-    });
+  void _toggle(int index) { setState(() => _items[index].done = !_items[index].done); _save(); }
+
+  void _delete(int index) {
+    final entry = _items.removeAt(index);
+    setState(() {});
+    _save();
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('تم حذف ${entry.name}'),
+      action: SnackBarAction(label: 'تراجع', onPressed: () {
+        setState(() => _items.insert((index > _items.length ? _items.length : index), entry)); _save();
+      }),
+    ));
+  }
+
+  void _clearDone() { setState(() => _items.removeWhere((e) => e.done)); _save(); }
+  int get _completed => _items.where((e) => e.done).length;
+  double get _progress => _items.isEmpty ? 0 : _completed / _items.length;
+
+  void _share() {
+    final lines = _items.map((e) => (e.done ? '☑ ' : '☐ ') + e.name).join('\n');
+    final text = _items.isEmpty ? 'قائمتي في رِفقة فارغة.' : 'قائمة مشترياتي — رِفقة 💚\n\n$lines';
+    Share.share(text);
+  }
+
+  String _symbol(String title) {
+    if (title.contains('تمر')) return '🌴';
+    if (title.contains('سجاد')) return '🕌';
+    if (title.contains('هد')) return '🎁';
+    if (title.contains('عطر') || title.contains('بخور')) return '🌸';
+    if (title.contains('سبح')) return '📿';
+    if (title.contains('لبس') || title.contains('عباي')) return '👘';
+    if (title.contains('حلو')) return '🍬';
+    return '🛍️';
   }
 
   @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _background,
+  Widget build(BuildContext context) => Directionality(textDirection: TextDirection.rtl,
+    child: Scaffold(
+      backgroundColor: MarketPalette.cream,
       appBar: AppBar(
-        backgroundColor: _background,
-        surfaceTintColor: _background,
-        foregroundColor: _greenDark,
-        elevation: 0,
-        title: const Text(
-          'قائمة التسوق',
-          style: TextStyle(
-            color: _ink,
-            fontSize: 20,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
+        backgroundColor: MarketPalette.evergreen,
+        foregroundColor: Colors.white,
+        title: const Text('قائمة التسوّق', style: TextStyle(fontWeight: FontWeight.w900)),
         centerTitle: true,
+        leading: IconButton(onPressed: () => Navigator.maybePop(context), icon: const Icon(Icons.arrow_forward_rounded)),
+        actions: [IconButton(tooltip: 'مشاركة القائمة', onPressed: _share, icon: const Icon(Icons.ios_share_rounded))],
       ),
-      body: SafeArea(
-        top: false,
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(
-                  18,
-                  12,
-                  18,
-                  120,
-                ),
-                children: [
-                  _buildHeader(),
-
-                  const SizedBox(height: 18),
-
-                  _buildProgress(),
-
-                  const SizedBox(height: 18),
-
-                  _buildAddItem(),
-
-                  const SizedBox(height: 24),
-
-                  _buildSectionTitle(),
-
-                  const SizedBox(height: 12),
-
-                  if (_items.isEmpty)
-                    _buildEmptyState()
-                  else
-                    ...List.generate(
-                      _items.length,
-                      (index) {
-                        return Padding(
-                          padding: const EdgeInsets.only(
-                            bottom: 10,
-                          ),
-                          child: _buildItem(
-                            _items[index],
-                            index,
-                          ),
-                        );
-                      },
-                    ),
-
-                  if (_completedCount > 0) ...[
-                    const SizedBox(height: 6),
-                    TextButton.icon(
-                      onPressed: _clearCompleted,
-                      icon: const Icon(
-                        Icons.cleaning_services_outlined,
-                      ),
-                      label: const Text(
-                        'حذف العناصر المكتملة',
-                      ),
-                      style: TextButton.styleFrom(
-                        foregroundColor: _muted,
-                      ),
-                    ),
-                  ],
-
-                  const SizedBox(height: 20),
-
-                  _buildBeforeReturnCard(),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-          colors: [
-            _green,
-            _greenDark,
-          ],
-        ),
-        borderRadius: BorderRadius.circular(26),
-        boxShadow: [
-          BoxShadow(
-            color: _greenDark.withValues(
-              alpha: 0.18,
-            ),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: const Row(
+      body: _busy ? const Center(child: CircularProgressIndicator()) : SafeArea(child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 19, 16, 38),
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.end,
-              children: [
-                Text(
-                  'إيه اللي محتاجة تشتريه؟',
-                  textAlign: TextAlign.right,
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 21,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                SizedBox(height: 7),
-                Text(
-                  'رتّبي مشترياتك عشان ما تنسيش حاجة قبل العودة.',
-                  textAlign: TextAlign.right,
-                  style: TextStyle(
-                    color: Color(0xFFE7F1ED),
-                    fontSize: 12.5,
-                    height: 1.6,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(width: 14),
-          Text(
-            '🛍️',
-            style: TextStyle(
-              fontSize: 43,
-            ),
-          ),
+          _hero(), const SizedBox(height: 18),
+          _progressCard(), const SizedBox(height: 18),
+          _addBox(), const SizedBox(height: 14),
+          _quickAdds(), const SizedBox(height: 23),
+          Row(children: [const Text('قائمتي', style: TextStyle(color: MarketPalette.ink, fontSize: 20, fontWeight: FontWeight.w900)),
+            const Spacer(), if (_completed > 0) TextButton.icon(onPressed: _clearDone,
+              icon: const Icon(Icons.delete_sweep_outlined, size: 18), label: const Text('حذف المكتمل'))]),
+          const SizedBox(height: 8),
+          if (_items.isEmpty) const MarketSoftCard(child: Padding(padding: EdgeInsets.all(24),
+            child: Center(child: Text('ابدئي بإضافة أول مشترياتك 🎁')))) else
+          ...List.generate(_items.length, (i) => Padding(padding: const EdgeInsets.only(bottom: 9),
+            child: _itemTile(_items[i], i))),
+          const SizedBox(height: 18), _tips(),
         ],
-      ),
-    );
-  }
+      )),
+    ),
+  );
 
-  Widget _buildProgress() {
-    final percent = (_progress * 100).round();
+  Widget _hero() => Container(
+    height: 148, padding: const EdgeInsets.all(22),
+    decoration: BoxDecoration(
+      gradient: const LinearGradient(colors: [MarketPalette.emerald, MarketPalette.evergreen]),
+      borderRadius: BorderRadius.circular(24),
+    ),
+    child: Row(children: [
+      const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center, children: [
+        Text('هدايا من أرض الحرمين', style: TextStyle(color: Color(0xFFF5DC9D), fontSize: 20, fontWeight: FontWeight.w900)),
+        SizedBox(height: 8),
+        Text('كل حاجة هتشتريها في مكان واحد، محفوظة حتى لو قفلتي التطبيق.',
+          style: TextStyle(color: Colors.white, fontSize: 12, height: 1.6)),
+      ])),
+      const SizedBox(width: 15), const Text('🎁', style: TextStyle(fontSize: 52)),
+    ]),
+  );
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: _border,
-        ),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Text(
-                '$percent%',
-                style: const TextStyle(
-                  color: _green,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                '$_completedCount من ${_items.length} تم شراؤها',
-                style: const TextStyle(
-                  color: _ink,
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 11),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: LinearProgressIndicator(
-              value: _progress,
-              minHeight: 8,
-              backgroundColor: _background,
-              valueColor:
-                  const AlwaysStoppedAnimation<Color>(
-                _gold,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _progressCard() => MarketSoftCard(child: Column(children: [
+    Row(children: [
+      const Icon(Icons.check_circle_outline_rounded, color: MarketPalette.emerald),
+      const SizedBox(width: 7),
+      Text('$_completed من ${_items.length} تم شراؤها',
+        style: const TextStyle(color: MarketPalette.ink, fontSize: 13, fontWeight: FontWeight.w800)),
+      const Spacer(),
+      Text('${(_progress * 100).round()}%', style: const TextStyle(color: MarketPalette.emerald, fontSize: 20, fontWeight: FontWeight.w900)),
+    ]),
+    const SizedBox(height: 12),
+    ClipRRect(borderRadius: BorderRadius.circular(15), child: LinearProgressIndicator(
+      value: _progress, minHeight: 9, backgroundColor: MarketPalette.pale,
+      color: MarketPalette.emerald)),
+  ]));
 
-  Widget _buildAddItem() {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: _border,
-        ),
-      ),
-      child: Row(
-        children: [
-          IconButton.filled(
-            onPressed: _addItem,
-            style: IconButton.styleFrom(
-              backgroundColor: _green,
-              foregroundColor: Colors.white,
-            ),
-            icon: const Icon(
-              Icons.add_rounded,
-            ),
-          ),
-          const SizedBox(width: 7),
-          Expanded(
-            child: TextField(
-              controller: _controller,
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) => _addItem(),
-              textAlign: TextAlign.right,
-              decoration: const InputDecoration(
-                hintText: 'أضيفي شيئًا للقائمة...',
-                hintStyle: TextStyle(
-                  color: _muted,
-                  fontSize: 12.5,
-                ),
-                border: InputBorder.none,
-                contentPadding:
-                    EdgeInsets.symmetric(
-                  horizontal: 10,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _addBox() => MarketSoftCard(padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+    child: Row(children: [
+      Expanded(child: TextField(
+        controller: _input, onSubmitted: _add,
+        decoration: const InputDecoration(hintText: 'ضيفي حاجة للقائمة...', border: InputBorder.none,
+          hintStyle: TextStyle(fontSize: 12, color: MarketPalette.muted)),
+      )),
+      IconButton.filled(style: IconButton.styleFrom(backgroundColor: MarketPalette.evergreen),
+        onPressed: () => _add(_input.text), icon: const Icon(Icons.add_rounded)),
+    ]));
 
-  Widget _buildSectionTitle() {
-    return const Row(
-      mainAxisAlignment: MainAxisAlignment.end,
-      children: [
-        Text(
-          'قائمتي',
-          style: TextStyle(
-            color: _ink,
-            fontSize: 17,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-        SizedBox(width: 7),
-        Icon(
-          Icons.checklist_rounded,
-          color: _green,
-        ),
-      ],
-    );
-  }
+  Widget _quickAdds() => Wrap(spacing: 6, runSpacing: 8, children: [
+    const Text('اقتراحات:  ', style: TextStyle(color: MarketPalette.muted, fontSize: 12)),
+    for (final text in ['تمر عجوة', 'سجادة صلاة', 'عطر', 'هدايا للعائلة'])
+      ActionChip(label: Text(text, style: const TextStyle(fontSize: 11)),
+        onPressed: () => _add(text), backgroundColor: Colors.white,
+        side: const BorderSide(color: MarketPalette.line)),
+  ]);
 
-  Widget _buildItem(
-    _ShoppingItem item,
-    int index,
-  ) {
-    return AnimatedContainer(
-      duration: const Duration(
-        milliseconds: 180,
-      ),
-      decoration: BoxDecoration(
-        color: item.completed
-            ? _green.withValues(alpha: 0.06)
-            : Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: item.completed
-              ? _green.withValues(alpha: 0.25)
-              : _border,
-        ),
-      ),
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 4,
-        ),
-        leading: IconButton(
-          onPressed: () {
-            _removeItem(index);
-          },
-          icon: const Icon(
-            Icons.delete_outline_rounded,
-            color: _muted,
-            size: 20,
-          ),
-        ),
-        title: Text(
-          item.name,
-          textAlign: TextAlign.right,
-          style: TextStyle(
-            color:
-                item.completed ? _muted : _ink,
-            fontSize: 13.5,
-            fontWeight: FontWeight.w800,
-            decoration: item.completed
-                ? TextDecoration.lineThrough
-                : null,
-          ),
-        ),
-        subtitle: item.completed
-            ? const Text(
-                'تم الشراء',
-                textAlign: TextAlign.right,
-                style: TextStyle(
-                  color: _green,
-                  fontSize: 10.5,
-                  fontWeight: FontWeight.w700,
-                ),
-              )
-            : null,
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              item.emoji,
-              style: const TextStyle(
-                fontSize: 23,
-              ),
-            ),
-            const SizedBox(width: 9),
-            InkWell(
-              onTap: () {
-                _toggleItem(index);
-              },
-              borderRadius:
-                  BorderRadius.circular(20),
-              child: Icon(
-                item.completed
-                    ? Icons.check_circle_rounded
-                    : Icons
-                        .radio_button_unchecked_rounded,
-                color: item.completed
-                    ? _green
-                    : _muted,
-                size: 26,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget _itemTile(_ShoppingEntry entry, int index) => InkWell(
+    onTap: () => _toggle(index), borderRadius: BorderRadius.circular(17),
+    child: MarketSoftCard(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      child: Row(children: [
+        Icon(entry.done ? Icons.check_box_rounded : Icons.check_box_outline_blank_rounded,
+          color: MarketPalette.emerald, size: 28),
+        const SizedBox(width: 12),
+        Expanded(child: Text(entry.name, style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800,
+          color: entry.done ? MarketPalette.muted : MarketPalette.ink,
+          decoration: entry.done ? TextDecoration.lineThrough : null))),
+        Text(_symbol(entry.name), style: const TextStyle(fontSize: 22)),
+        IconButton(onPressed: () => _delete(index),
+          tooltip: 'حذف', icon: const Icon(Icons.close_rounded, size: 18, color: MarketPalette.muted)),
+      ]),
+    ),
+  );
 
-  Widget _buildEmptyState() {
-    return Container(
-      padding: const EdgeInsets.symmetric(
-        vertical: 35,
-        horizontal: 20,
-      ),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: _border,
-        ),
-      ),
-      child: const Column(
-        children: [
-          Text(
-            '🛍️',
-            style: TextStyle(
-              fontSize: 42,
-            ),
-          ),
-          SizedBox(height: 10),
-          Text(
-            'قائمة التسوق فارغة',
-            style: TextStyle(
-              color: _ink,
-              fontSize: 15,
-              fontWeight: FontWeight.w900,
-            ),
-          ),
-          SizedBox(height: 5),
-          Text(
-            'أضيفي الأشياء التي تريدين شراءها.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: _muted,
-              fontSize: 12,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBeforeReturnCard() {
-    return Container(
-      padding: const EdgeInsets.all(17),
-      decoration: BoxDecoration(
-        color: _gold.withValues(
-          alpha: 0.12,
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: _gold.withValues(
-            alpha: 0.35,
-          ),
-        ),
-      ),
-      child: const Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.end,
-        children: [
-          Row(
-            mainAxisAlignment:
-                MainAxisAlignment.end,
-            children: [
-              Text(
-                'قبل العودة إلى بلدك',
-                style: TextStyle(
-                  color: _greenDark,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-              SizedBox(width: 7),
-              Icon(
-                Icons.luggage_rounded,
-                color: _green,
-              ),
-            ],
-          ),
-          SizedBox(height: 12),
-          _ReturnReminder(
-            text: 'راجعي هدايا العائلة والأصدقاء',
-          ),
-          _ReturnReminder(
-            text: 'راجعي التمور والهدايا الغذائية',
-          ),
-          _ReturnReminder(
-            text: 'تأكدي من العطور والهدايا الشخصية',
-          ),
-          _ReturnReminder(
-            text: 'راجعي الملابس ومستلزمات الصلاة',
-          ),
-          _ReturnReminder(
-            text: 'تأكدي من وزن الأمتعة قبل السفر',
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ShoppingItem {
-  _ShoppingItem({
-    required this.name,
-    required this.emoji,
-    this.completed = false,
-  });
-
-  final String name;
-  final String emoji;
-  bool completed;
-}
-
-class _ReturnReminder extends StatelessWidget {
-  const _ReturnReminder({
-    required this.text,
-  });
-
-  final String text;
-
-  static const Color _green =
-      Color(0xFF176B52);
-  static const Color _ink =
-      Color(0xFF17322A);
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(
-        bottom: 8,
-      ),
-      child: Row(
-        mainAxisAlignment:
-            MainAxisAlignment.end,
-        children: [
-          Flexible(
-            child: Text(
-              text,
-              textAlign: TextAlign.right,
-              style: const TextStyle(
-                color: _ink,
-                fontSize: 12,
-                height: 1.5,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          const Icon(
-            Icons.check_circle_outline_rounded,
-            color: _green,
-            size: 17,
-          ),
-        ],
-      ),
-    );
-  }
+  Widget _tips() => const MarketSoftCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(children: [Icon(Icons.lightbulb_outline_rounded, color: MarketPalette.gold),
+        SizedBox(width: 8), Text('قبل العودة', style: TextStyle(color: MarketPalette.ink,
+          fontWeight: FontWeight.w900, fontSize: 16))]),
+      SizedBox(height: 9),
+      Text('راجعي وزن الأمتعة، وقواعد حمل السوائل والعطور والمواد الغذائية مع شركة الطيران. '
+        'واحتفظي بفواتير المشتريات المهمة.',
+        style: TextStyle(color: MarketPalette.muted, fontSize: 12, height: 1.8)),
+    ],
+  ));
 }

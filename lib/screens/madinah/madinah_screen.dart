@@ -6,12 +6,15 @@ import '../../services/madinah/madinah_content_repository.dart';
 import '../../services/madinah/madinah_repository.dart';
 import '../../screens/duas/amanat_screen.dart';
 import '../../state/app_state.dart';
+import 'madinah_gate_experience.dart';
 import 'madinah_ui.dart';
+import 'mosque/madinah_mosque_gallery.dart';
 import 'memories/madinah_memories_screen.dart';
 import 'mosque/prophet_mosque_screen.dart';
 import '../rawdah/rawdah_screen.dart';
 import 'salawat/salawat_library_screen.dart';
 import 'stories/prophetic_story_screen.dart';
+import 'stories/prophetic_story_player.dart';
 import 'stories/prophetic_stories_screen.dart';
 
 const _green = Color(0xFF104B39);
@@ -20,7 +23,7 @@ const _gold = Color(0xFFC5A15F);
 const _cream = Color(0xFFFAF8F2);
 const _ink = Color(0xFF20352C);
 const _muted = Color(0xFF77837A);
-const _heroImage = 'assets/images/rifqa_madinah_hero.jpg';
+const _heroImage = 'assets/images/madinah/exterior_sunset_wide.png';
 
 class MadinahScreen extends StatefulWidget {
   const MadinahScreen({
@@ -110,6 +113,21 @@ class _MadinahScreenState extends State<MadinahScreen> {
   void _openMemories() {
     _openPage(
       MadinahMemoriesScreen(repository: widget.repository),
+    );
+  }
+
+  void _openVirtualTour() {
+    _openPage(
+      MadinahGateExperience(
+        onEnter: () {
+          if (!mounted) return;
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (_) => const MadinahMosqueGalleryScreen(),
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -271,6 +289,13 @@ class _MadinahScreenState extends State<MadinahScreen> {
               ),
             ),
 
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+                child: _VirtualTourBanner(onTap: _openVirtualTour),
+              ),
+            ),
+
             SliverPadding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               sliver: SliverLayoutBuilder(
@@ -393,6 +418,24 @@ class _MadinahScreenState extends State<MadinahScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
+                  if (featuredStory != null) ...[
+                    _StoryTile(
+                      title: 'حكاية تفاعلية: ${featuredStory.title}',
+                      subtitle: 'مشاهد متتابعة مع عرض النص والمصدر',
+                      icon: Icons.play_circle_outline_rounded,
+                      onTap: () => _openPage(
+                        PropheticStoryPlayer(
+                          story: featuredStory,
+                          backgroundAssets: const [
+                            'assets/images/madinah/exterior_sunset_wide.png',
+                            'assets/images/madinah/courtyard_day_umbrella.png',
+                            'assets/images/madinah/minarets_sunset.png',
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
                   if (featuredStory != null)
                     _StoryTile(
                       title: featuredStory.title,
@@ -802,6 +845,132 @@ class _ShortcutCard extends StatelessWidget {
                   size: 17,
                 ),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ───────────────────────────────────────────────────────
+// Virtual Tour Banner
+// ───────────────────────────────────────────────────────
+
+class _VirtualTourBanner extends StatefulWidget {
+  const _VirtualTourBanner({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  State<_VirtualTourBanner> createState() => _VirtualTourBannerState();
+}
+
+class _VirtualTourBannerState extends State<_VirtualTourBanner>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 3),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: _dark,
+      borderRadius: BorderRadius.circular(26),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(26),
+        onTap: widget.onTap,
+        child: Container(
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(26),
+            gradient: const LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [_dark, Color(0xFF042019)],
+            ),
+            border: Border.all(color: _gold.withValues(alpha: 0.35)),
+          ),
+          child: Row(
+            children: [
+              AnimatedBuilder(
+                animation: _pulse,
+                builder: (context, child) {
+                  final double glow = _pulse.value * 8 + 6;
+                  return Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: _gold.withValues(alpha: 0.4),
+                          blurRadius: glow,
+                          spreadRadius: glow * 0.12,
+                        ),
+                      ],
+                    ),
+                    child: child,
+                  );
+                },
+                child: Container(
+                  height: 56,
+                  width: 56,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: _gold),
+                    color: Colors.white.withValues(alpha: 0.06),
+                  ),
+                  child: const Icon(
+                    Icons.view_in_ar_rounded,
+                    color: _gold,
+                    size: 26,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '✦ جديد',
+                      style: TextStyle(
+                        color: _gold,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'جولة افتراضية داخل المسجد النبوي',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 15.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'بوابة ثلاثية الأبعاد، ثم صور حقيقية تستشعرين فيها المكان',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.72),
+                        fontSize: 11,
+                        height: 1.5,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 6),
+              const Icon(Icons.chevron_left_rounded, color: _gold),
             ],
           ),
         ),

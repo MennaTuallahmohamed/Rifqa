@@ -1,0 +1,79 @@
+
+name: rafeek
+
+description: رفيق المعتمر - Flutter implementation
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.4.0 <4.0.0'
+
+dependencies:
+  webview_flutter: ^4.10.0
+  model_viewer_plus: 1.9.3
+  flutter:
+    sdk: flutter
+
+  # General
+  shared_preferences: ^2.3.2
+  google_fonts: ^6.2.1
+  intl: ^0.19.0
+  share_plus: ^10.0.2
+  url_launcher: ^6.3.2
+
+  # Rifqa Voice
+  flutter_tts: ^4.2.5
+  just_audio: ^0.9.46
+  audioplayers: ^6.1.0
+  wakelock_plus: ^1.5.2
+
+  # Maps and Location
+  flutter_map: ^7.0.1
+  latlong2: ^0.9.1
+  maplibre_gl: ^0.27.1
+  geolocator: ^14.0.2
+  flutter_compass: ^0.8.0
+
+  # Notifications and Prayer
+  flutter_local_notifications: ^22.3.1
+  timezone: ^0.11.1
+  adhan_dart: ^2.0.1
+
+  # Media and Files
+  image_picker: ^1.1.2
+  record: ^6.0.0
+  path_provider: ^2.1.5
+
+  # Firebase
+  firebase_core: ^4.15.0
+  firebase_auth: ^6.7.0
+  cloud_firestore: ^6.10.0
+  firebase_messaging: ^16.0.0
+  firebase_ai: ^4.0.0
+
+  # Speech Recognition
+  speech_to_text: ^7.5.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/lost_help/
+    - assets/rifqa_profile/
+    - assets/markets/
+    - assets/markets/images/
+    - assets/duas/
+    - assets/scenes/sai/
+    - assets/scenes/tawaf/
+    - assets/models/
+    - assets/data/haramain/
+    - assets/images/
+    - assets/ziyarat/
+    - lib/screens/haramain/haramain_live.json
+    - assets/umrah/
+    - assets/audio/umrah/

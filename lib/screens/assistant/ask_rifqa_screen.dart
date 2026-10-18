@@ -23,6 +23,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:geolocator/geolocator.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../services/profile/rifqa_profile_store.dart';
 import 'rifqa_ai_service.dart';
 import 'rifqa_history_service.dart';
 import 'lost_help_screen.dart';
@@ -32,6 +33,12 @@ const _cream = Color(0xFFFAF7F0);
 const _ink = Color(0xFF1F2A24);
 const _gold = Color(0xFFB8893A);
 const _danger = Color(0xFFB3261E);
+
+typedef ShareLocationCallback = Future<bool> Function(
+  double latitude,
+  double longitude,
+  double accuracyMeters,
+);
 
 class _Msg {
   _Msg(this.text, {required this.isUser, this.sos = false, this.fromAi = false})
@@ -50,14 +57,11 @@ class _Msg {
 class AskRifqaScreen extends StatefulWidget {
   const AskRifqaScreen({
     super.key,
-    this.lostProfile = const LostProfile(),
     this.onShareLocationWithGroup,
     this.onCallCompanion,
   });
 
   /// بيانات المستخدمة من ملفها الشخصي (اسم، فندق، تليفون المرافق…).
-  final LostProfile lostProfile;
-
   /// اربطيها بمجموعات رفقة لإرسال الموقع كرسالة في الجروب.
   /// لو null بنستخدم المشاركة العادية (واتساب/رسائل).
   final ShareLocationCallback? onShareLocationWithGroup;
@@ -190,17 +194,21 @@ class _AskRifqaScreenState extends State<AskRifqaScreen>
       context,
       MaterialPageRoute(
         fullscreenDialog: true,
-        builder: (_) => LostHelpScreen(
-          profile: widget.lostProfile,
-          onShareToGroup: widget.onShareLocationWithGroup,
-        ),
+        builder: (_) => const LostHelpScreen(),
       ),
     );
   }
 
   Future<void> _callCompanion() async {
-    final phone = widget.lostProfile.companionPhone;
-    if (phone == null || phone.isEmpty) {
+    final profile = RifqaProfileStore.instance;
+    await profile.load();
+    final phone = [
+      profile.personal.phone,
+      profile.trip.guidePhone,
+      profile.trip.groupLeaderPhone,
+      profile.trip.emergencyPhone,
+    ].firstWhere((value) => value.trim().isNotEmpty, orElse: () => '');
+    if (phone.isEmpty) {
       _toast('ضيفي رقم المرافق في ملفك الشخصي عشان نتصل بيه بضغطة.');
       return;
     }

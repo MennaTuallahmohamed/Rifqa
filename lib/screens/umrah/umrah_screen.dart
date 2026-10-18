@@ -1,609 +1,132 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../../core/theme/app_colors.dart';
-import '../../core/widgets/ui.dart';
 import '../../state/app_state.dart';
 import 'umrah_data.dart';
 import 'umrah_tools.dart';
-import 'umrah_voice.dart';
-import 'umrah_art.dart';
 import 'umrah_3d.dart';
+import 'umrah_premium.dart';
+import 'rifqa_narration_player.dart';
 
-class _Tool {
-  final String label;
-  final IconData icon;
-  final List<Color> colors;
-  final Widget page;
-  const _Tool(this.label, this.icon, this.colors, this.page);
-}
-
-class UmrahScreen extends StatefulWidget {
+/// دليل العمرة — design guided by the five-screen cinematic reference.
+/// All ritual content, progress storage and both 3D engines are reused.
+class UmrahScreen extends StatelessWidget {
   const UmrahScreen({super.key});
-  @override
-  State<UmrahScreen> createState() => _UmrahScreenState();
-}
-
-class _UmrahScreenState extends State<UmrahScreen> {
-  int tab = 0;
-  double duaScale = 1.0;
-  bool _touring = false;
-
-  @override
-  void dispose() {
-    UVoice.I.stop();
-    super.dispose();
-  }
-
-  void _stopAudio() {
-    _touring = false;
-    UVoice.I.stop();
-    if (mounted) setState(() {});
-  }
-
-  Future<void> _startTour() async {
-    final st = AppScope.of(context);
-    setState(() => _touring = true);
-    for (int k = st.step; k < 7 && _touring; k++) {
-      st.change(() => st.step = k);
-      final ok = await UVoice.I.speak(stepNarration(umrahGuide[k], k));
-      if (!ok || !_touring || !mounted) break;
-      final ok2 =
-          await UVoice.I.speak('الدعاء: ${umrahGuide[k].dua}', rate: .36);
-      if (!ok2 || !_touring || !mounted) break;
-    }
-    if (mounted) setState(() => _touring = false);
-  }
-
-  int _lastStep = -1;
-
-  static const _tools = <_Tool>[
-    _Tool('طواف 3D', Icons.view_in_ar_rounded, UC.emerald, Tawaf3DPage()),
-    _Tool('سعي 3D', Icons.directions_walk_rounded, UC.plum, Sai3DPage()),
-    _Tool('المواقيت', Icons.explore_rounded, UC.sky, MawaqitPage()),
-    _Tool('المحظورات', Icons.block_rounded, UC.rose, IhramRulesPage()),
-    _Tool('أسئلة شائعة', Icons.help_rounded, UC.plum, FaqPage()),
-    _Tool('اختبر نفسك', Icons.quiz_rounded, UC.gold, QuizPage()),
-    _Tool('حقيبتك', Icons.luggage_rounded, UC.teal, ChecklistPage()),
-  ];
-
-  @override
-  Widget build(BuildContext c) {
-    final st = AppScope.of(c);
-    final i = st.step.clamp(0, 6).toInt();
-    final s = umrahGuide[i];
-    if (i != _lastStep) {
-      tab = 0;
-      _lastStep = i;
-    }
-    final doneCount = st.done.length;
-
-    return Scaffold(
-      backgroundColor: UC.ivory,
-      body: Container(
-        color: UC.ivory,
-        child: ListView(
-        padding: EdgeInsets.zero,
-        physics: const BouncingScrollPhysics(),
-        children: [
-          _Header(done: doneCount),
-          const SizedBox(height: 18),
-
-          // أدواتك
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 0, 20, 10),
-            child: Text('أدوات تساعدك',
-                style: TextStyle(
-                    color: UC.ink, fontSize: 16, fontWeight: FontWeight.w800)),
-          ),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            physics: const BouncingScrollPhysics(),
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                for (final t in _tools)
-                  Padding(
-                    padding: const EdgeInsetsDirectional.only(end: 10),
-                    child: _ToolChip(
-                      tool: t,
-                      onTap: () => Navigator.push(
-                          c, MaterialPageRoute(builder: (_) => t.page)),
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 22),
-
-          // مسار الرحلة
-          const Padding(
-            padding: EdgeInsets.fromLTRB(20, 0, 20, 10),
-            child: Text('مسار عمرتك',
-                style: TextStyle(
-                    color: UC.ink, fontSize: 16, fontWeight: FontWeight.w800)),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10),
-            child: _PathRow(
-              current: i,
-              isDone: (k) => st.done.contains(k),
-              onTap: (k) {
-                _stopAudio();
-                st.change(() => st.step = k);
-              },
-            ),
-          ),
-          const SizedBox(height: 14),
-
-          // بطاقة الخطوة
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: UCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 58,
-                        height: 58,
-                        alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(18),
-                          gradient: LinearGradient(
-                            begin: Alignment.topRight,
-                            end: Alignment.bottomLeft,
-                            colors: s.colors,
-                          ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: s.colors.last.withOpacity(.35),
-                              blurRadius: 12,
-                              offset: const Offset(0, 5),
-                            ),
-                          ],
-                        ),
-                        child:
-                            Text(s.emoji, style: const TextStyle(fontSize: 28)),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('الخطوة ${i + 1} من 7',
-                                style: const TextStyle(
-                                    color: UC.muted, fontSize: 12)),
-                            const SizedBox(height: 2),
-                            Text(s.title,
-                                style: const TextStyle(
-                                    color: UC.ink,
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.w900)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: [
-                      _Badge(s.rank, _rankColor(s.rank)),
-                      _Badge('⏱ ${s.duration}', AppColors.softGreen),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  UStepArt(index: i, colors: s.colors),
-                  const SizedBox(height: 12),
-                  Text(s.summary,
-                      style: const TextStyle(
-                          color: UC.muted, fontSize: 14, height: 1.5)),
-                  const SizedBox(height: 16),
-                  _VoiceBar(
-                    touring: _touring,
-                    onExplain: () => UVoice.I.speak(stepNarration(s, i)),
-                    onDua: () => UVoice.I.speak(s.dua, rate: .36),
-                    onTour: _startTour,
-                    onStop: _stopAudio,
-                  ),
-                  const SizedBox(height: 14),
-                  _Tabs(sel: tab, on: (k) => setState(() => tab = k)),
-                  const SizedBox(height: 14),
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 250),
-                    child: KeyedSubtree(
-                      key: ValueKey('$i-$tab'),
-                      child: _tabBody(c, s),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          if (s.sim != null) ...[
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Column(
-                children: [
-                  _Open3D(
-                    label: s.sim == 'tawaf'
-                        ? 'جرّب الطواف حول الكعبة بالـ3D'
-                        : 'جرّب السعي بين الصفا والمروة بالـ3D',
-                    page: s.sim == 'tawaf'
-                        ? const Tawaf3DPage()
-                        : const Sai3DPage(),
-                  ),
-                  const SizedBox(height: 12),
-                  CounterCard(type: s.sim!),
-                ],
-              ),
-            ),
-          ],
-
-          if (doneCount >= 7) ...[
-            const SizedBox(height: 12),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: _Congrats(
-                onReset: () => st.change(() {
-                  st.done.clear();
-                  st.step = 0;
-                  st.tawaf = 0;
-                  st.sai = 0;
-                }),
-              ),
-            ),
-          ],
-
-          const SizedBox(height: 14),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Row(
-              children: [
-                if (i > 0) ...[
-                  OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.greenDark,
-                      side: const BorderSide(color: AppColors.green),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 18, vertical: 16),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16)),
-                    ),
-                    onPressed: () {
-                      _stopAudio();
-                      st.change(() => st.step--);
-                    },
-                    child: const Text('السابقة'),
-                  ),
-                  const SizedBox(width: 10),
-                ],
-                Expanded(
-                  child: PrimaryButton(
-                    i < 6
-                        ? 'تمّت هذه الخطوة ← التالية'
-                        : 'أتممت العمرة، تقبّل الله',
-                    onTap: () {
-                      _stopAudio();
-                      HapticFeedback.lightImpact();
-                      st.change(() {
-                        st.done.add(st.step);
-                        if (st.step < 6) st.step++;
-                      });
-                    },
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const Padding(
-            padding: EdgeInsets.fromLTRB(24, 14, 24, 28),
-            child: Text(
-              'محتوى إرشادي يعتمد على ما عليه جمهور أهل العلم، وللفتوى في حالتك الخاصة راجع أهل العلم.',
-              textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12, color: UC.muted, height: 1.5),
-            ),
-          ),
-        ],
-        ),
-      ),
-    );
-  }
-
-  Color _rankColor(String r) {
-    if (r == 'ركن') return AppColors.softGold;
-    if (r == 'واجب') return AppColors.softRed;
-    return AppColors.softGreen;
-  }
-
-  Widget _tabBody(BuildContext c, UStep s) {
-    switch (tab) {
-      case 1:
-        return _duaBody(c, s);
-      case 2:
-        return _errorsBody(s);
-      default:
-        return _howBody(s);
-    }
-  }
-
-  // ───────── الشرح ─────────
-  Widget _howBody(UStep s) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        for (int k = 0; k < s.how.length; k++)
-          Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: 28,
-                  height: 28,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: LinearGradient(colors: s.colors),
-                  ),
-                  child: Text('${k + 1}',
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 13)),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 3),
-                    child: Text(s.how[k],
-                        style: const TextStyle(
-                            color: UC.ink, fontSize: 15, height: 1.6)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        InfoBox('💡 نصيحة', s.tip, AppColors.softGold),
-        if (s.women != null)
-          InfoBox('🌸 للمرأة', s.women!, const Color(0xFFF3EAF8)),
-      ],
-    );
-  }
-
-  // ───────── الدعاء ─────────
-  Widget _duaBody(BuildContext c, UStep s) {
-    return Column(
-      children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(16, 22, 16, 16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            gradient: const LinearGradient(
-              begin: Alignment.topRight,
-              end: Alignment.bottomLeft,
-              colors: [AppColors.greenDark, Color(0xFF083D2D)],
-            ),
-          ),
-          child: Stack(
-            children: [
-              Positioned.fill(
-                child:
-                    CustomPaint(painter: const UPatternPainter(opacity: .06)),
-              ),
-              Column(
-                children: [
-                  const Text('✦',
-                      style: TextStyle(color: AppColors.gold, fontSize: 16)),
-                  const SizedBox(height: 8),
-                  Text(
-                    s.dua,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 20 * duaScale,
-                      height: 2,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: [
-            IconButton(
-              tooltip: 'تصغير الخط',
-              onPressed: () =>
-                  setState(() => duaScale = math.max(.85, duaScale - .15)),
-              icon: const Icon(Icons.text_decrease_rounded),
-              color: AppColors.greenDark,
-            ),
-            IconButton(
-              tooltip: 'تكبير الخط',
-              onPressed: () =>
-                  setState(() => duaScale = math.min(1.6, duaScale + .15)),
-              icon: const Icon(Icons.text_increase_rounded),
-              color: AppColors.greenDark,
-            ),
-            const Spacer(),
-            TextButton.icon(
-              onPressed: () {
-                Clipboard.setData(ClipboardData(text: s.dua));
-                ScaffoldMessenger.of(c).showSnackBar(
-                  const SnackBar(content: Text('تم نسخ الدعاء')),
-                );
-              },
-              icon: const Icon(Icons.copy_rounded, size: 18),
-              label: const Text('نسخ'),
-              style: TextButton.styleFrom(foregroundColor: AppColors.greenDark),
-            ),
-          ],
-        ),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: AppColors.softGold,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Text(s.duaNote,
-              style: const TextStyle(color: UC.ink, fontSize: 13, height: 1.5)),
-        ),
-      ],
-    );
-  }
-
-  // ───────── الأخطاء الشائعة ─────────
-  Widget _errorsBody(UStep s) {
-    return Column(
-      children: [
-        for (final e in s.errors)
-          Container(
-            margin: const EdgeInsets.only(bottom: 10),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: UC.border),
-            ),
-            child: Column(
-              children: [
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: const BoxDecoration(
-                    color: AppColors.softRed,
-                    borderRadius:
-                        BorderRadius.vertical(top: Radius.circular(15)),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('❌ '),
-                      Expanded(
-                        child: Text(e.wrong,
-                            style: const TextStyle(
-                                color: UC.ink,
-                                fontWeight: FontWeight.w700,
-                                height: 1.5)),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: const BoxDecoration(
-                    color: AppColors.softGreen,
-                    borderRadius:
-                        BorderRadius.vertical(bottom: Radius.circular(15)),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text('✅ '),
-                      Expanded(
-                        child: Text(e.right,
-                            style: const TextStyle(color: UC.ink, height: 1.5)),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-// ═══════════════════════ الهيدر ═══════════════════════
-class _Header extends StatelessWidget {
-  final int done;
-  const _Header({required this.done});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topRight,
-          end: Alignment.bottomLeft,
-          colors: [AppColors.green, AppColors.greenDark, Color(0xFF083D2D)],
-        ),
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
-      ),
-      child: ClipRRect(
-        borderRadius: const BorderRadius.vertical(bottom: Radius.circular(32)),
-        child: Stack(
-          children: [
-            const Positioned.fill(
-              child: CustomPaint(painter: UPatternPainter()),
-            ),
-            SafeArea(
-              bottom: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 16, 20, 22),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text('دليل العمرة',
-                                  style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 27,
-                                      fontWeight: FontWeight.w900)),
-                              const SizedBox(height: 4),
-                              Text('سبع خطوات بين النية والتحلل',
-                                  style: TextStyle(
-                                      color: UC.goldLight.withOpacity(.95),
-                                      fontSize: 13.5)),
-                            ],
-                          ),
-                        ),
-                        SizedBox(
-                          width: 66,
-                          height: 66,
-                          child: CustomPaint(
-                            painter: _HeaderRing(done / 7),
-                            child: Center(
-                              child: Text('$done/7',
-                                  style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 15)),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: const [
-                        _HeroChip('ركن: الإحرام'),
-                        _HeroChip('ركن: الطواف'),
-                        _HeroChip('ركن: السعي'),
-                        _HeroChip('واجب: الحلق أو التقصير'),
-                      ],
-                    ),
-                  ],
+    final st = AppScope.of(context);
+    final selected = st.step.clamp(0, 6).toInt();
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+        backgroundColor: UGold.cream,
+        body: CustomScrollView(
+          physics: const BouncingScrollPhysics(),
+          slivers: [
+            SliverToBoxAdapter(child: _JourneyHero(done: st.done.length)),
+            SliverToBoxAdapter(
+                child: Padding(
+              padding: const EdgeInsets.fromLTRB(21, 24, 21, 13),
+              child: _TitleRow('خطوات عمرتك',
+                  trailing: '${st.done.length} من 7 مكتملة'),
+            )),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 17),
+              sliver: SliverList.builder(
+                itemCount: umrahGuide.length,
+                itemBuilder: (c, i) => _JourneyRow(
+                  index: i,
+                  current: i == selected,
+                  completed: st.done.contains(i),
+                  onTap: () {
+                    st.change(() => st.step = i);
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => UmrahStepPage(index: i)));
+                  },
                 ),
               ),
             ),
+            if (st.done.length >= 7)
+              SliverToBoxAdapter(
+                  child: Padding(
+                padding: const EdgeInsets.fromLTRB(17, 12, 17, 0),
+                child: Container(
+                    padding: const EdgeInsets.all(18),
+                    decoration: BoxDecoration(
+                        color: const Color(0xFF0A6049),
+                        borderRadius: BorderRadius.circular(22)),
+                    child: Column(children: [
+                      const Icon(Icons.celebration_rounded,
+                          color: UGold.gold, size: 30),
+                      const SizedBox(height: 5),
+                      const Text('تقبّل الله عمرتك',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w900)),
+                      TextButton(
+                          onPressed: () => st.change(() {
+                                st.done.clear();
+                                st.step = 0;
+                                st.tawaf = 0;
+                                st.sai = 0;
+                              }),
+                          child: const Text('بدء عمرة جديدة',
+                              style: TextStyle(color: UGold.gold))),
+                    ])),
+              )),
+            SliverToBoxAdapter(
+                child: Padding(
+              padding: const EdgeInsets.fromLTRB(17, 13, 17, 0),
+              child: _CtaButton(
+                label:
+                    'ابدئي الخطوة ${selected + 1}  ·  ${umrahGuide[selected].tabLabel}',
+                icon: Icons.arrow_back_rounded,
+                onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => UmrahStepPage(index: selected))),
+              ),
+            )),
+            SliverToBoxAdapter(
+                child: Padding(
+              padding: const EdgeInsets.fromLTRB(21, 25, 21, 13),
+              child: _TitleRow(
+                'أدوات رحلتك',
+                onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const UmrahToolsGallery())),
+              ),
+            )),
+            SliverToBoxAdapter(
+                child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 17),
+              child: Row(children: [
+                Expanded(
+                    child: _MiniTool(
+                        image: 'assets/umrah/tool_tawaf.jpg',
+                        title: 'طواف 3D',
+                        onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const UmrahImmersiveTourPage(
+                                    tawaf: true))))),
+                const SizedBox(width: 10),
+                Expanded(
+                    child: _MiniTool(
+                        image: 'assets/umrah/tool_sai.jpg',
+                        title: 'سعي 3D',
+                        onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                                builder: (_) => const UmrahImmersiveTourPage(
+                                    tawaf: false))))),
+              ]),
+            )),
+            const SliverToBoxAdapter(child: SizedBox(height: 30)),
           ],
         ),
       ),
@@ -611,776 +134,1341 @@ class _Header extends StatelessWidget {
   }
 }
 
-class _HeroChip extends StatelessWidget {
-  final String text;
-  const _HeroChip(this.text);
+class _JourneyHero extends StatelessWidget {
+  const _JourneyHero({required this.done});
+  final int done;
   @override
-  Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(.12),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: AppColors.gold.withOpacity(.6)),
-        ),
-        child: Text(text,
+  Widget build(BuildContext context) {
+    final top = MediaQuery.paddingOf(context).top;
+    return ClipRRect(
+      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(33)),
+      child: SizedBox(
+          height: 415 + top,
+          child: Stack(fit: StackFit.expand, children: [
+            const UPhoto(
+                asset: 'assets/umrah/umrah_hero.jpg',
+                alignment: Alignment.center),
+            const DecoratedBox(
+                decoration: BoxDecoration(
+                    gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              stops: [0, .48, .75, 1],
+              colors: [
+                Color(0x990D2D25),
+                Color(0x000A382C),
+                Color(0x300C4234),
+                Color(0xD204372D)
+              ],
+            ))),
+            Positioned(
+                top: top + 18,
+                right: 22,
+                left: 20,
+                child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Expanded(
+                          child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                            Text('دليل العمرة',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 30,
+                                    fontWeight: FontWeight.w900,
+                                    shadows: [
+                                      Shadow(
+                                          color: Colors.black38, blurRadius: 10)
+                                    ])),
+                            SizedBox(height: 4),
+                            Text('الخطوات السبع للعمرة بسهولة ويُسر',
+                                style: TextStyle(
+                                    color: Color(0xFFFFE9B6),
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w600)),
+                          ])),
+                      Material(
+                          color: const Color(0xBBFCF8F0),
+                          shape: const CircleBorder(),
+                          child: IconButton(
+                              tooltip: 'أدوات العمرة',
+                              icon: const Icon(Icons.menu_book_outlined,
+                                  color: UGold.deep),
+                              onPressed: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) =>
+                                          const UmrahToolsGallery())))),
+                    ])),
+            Positioned(
+                top: top + 105,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Container(
+                    width: 154,
+                    height: 154,
+                    decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: const Color(0xEDFFF9ED),
+                        border: Border.all(color: Colors.white70, width: 5),
+                        boxShadow: [
+                          BoxShadow(
+                              color: const Color(0xFF152B24).withOpacity(.25),
+                              blurRadius: 24,
+                              offset: const Offset(0, 10))
+                        ]),
+                    child: Stack(alignment: Alignment.center, children: [
+                      SizedBox(
+                          width: 132,
+                          height: 132,
+                          child: CircularProgressIndicator(
+                              value: done / 7,
+                              strokeWidth: 5,
+                              strokeCap: StrokeCap.round,
+                              backgroundColor: const Color(0xFFE7D9C0),
+                              valueColor: const AlwaysStoppedAnimation<Color>(
+                                  UGold.gold))),
+                      Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.mosque_rounded,
+                                color: UGold.deep, size: 25),
+                            const SizedBox(height: 5),
+                            Text('$done/7',
+                                textDirection: TextDirection.ltr,
+                                style: const TextStyle(
+                                    fontSize: 30,
+                                    height: 1.1,
+                                    color: UGold.deep,
+                                    fontWeight: FontWeight.w900)),
+                            const Text('أكملت من الخطوات',
+                                style: TextStyle(
+                                    color: UGold.ink, fontSize: 10.5)),
+                          ]),
+                    ]),
+                  ),
+                )),
+            Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: ClipPath(
+                  clipper: _BlessingWave(),
+                  child: Container(
+                    height: 154,
+                    padding: const EdgeInsets.fromLTRB(22, 44, 22, 18),
+                    decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                            begin: Alignment.topRight,
+                            end: Alignment.bottomLeft,
+                            colors: [Color(0xFF12684F), Color(0xFF05382D)])),
+                    child: const Column(children: [
+                      Text('عمرة مباركة',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              fontSize: 19,
+                              color: Color(0xFFEBCB84),
+                              fontWeight: FontWeight.w900)),
+                      SizedBox(height: 5),
+                      Text('لبيك اللهم عمرة',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              fontSize: 15,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w700)),
+                      SizedBox(height: 3),
+                      Text(
+                          'رحلة إلى الله تبدأ بالنية، ويرافقك فيها رِفقة خطوة بخطوة',
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          style: TextStyle(
+                              fontSize: 11,
+                              height: 1.5,
+                              color: Color(0xFFE2F0E8))),
+                    ]),
+                  ),
+                )),
+          ])),
+    );
+  }
+}
+
+class _BlessingWave extends CustomClipper<Path> {
+  @override
+  Path getClip(Size size) => Path()
+    ..moveTo(0, 24)
+    ..quadraticBezierTo(size.width * .25, -11, size.width * .5, 21)
+    ..quadraticBezierTo(size.width * .8, 51, size.width, 18)
+    ..lineTo(size.width, size.height)
+    ..lineTo(0, size.height)
+    ..close();
+  @override
+  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
+}
+
+class _TitleRow extends StatelessWidget {
+  const _TitleRow(this.title, {this.trailing, this.onTap});
+  final String title;
+  final String? trailing;
+  final VoidCallback? onTap;
+  @override
+  Widget build(BuildContext context) => Row(children: [
+        Text(title,
             style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontWeight: FontWeight.w600)),
+                color: UGold.deep, fontSize: 19, fontWeight: FontWeight.w900)),
+        const Spacer(),
+        if (trailing != null)
+          Text(trailing!,
+              style: const TextStyle(color: UGold.ink, fontSize: 11)),
+        if (onTap != null)
+          TextButton.icon(
+              onPressed: onTap,
+              icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 13),
+              label: const Text('عرض الكل'),
+              style: TextButton.styleFrom(foregroundColor: UGold.deep)),
+      ]);
+}
+
+const _stepIcons = <IconData>[
+  Icons.menu_book_rounded,
+  Icons.checkroom_rounded,
+  Icons.mosque_rounded,
+  Icons.view_in_ar_rounded,
+  Icons.water_drop_rounded,
+  Icons.directions_walk_rounded,
+  Icons.content_cut_rounded,
+];
+
+class _JourneyRow extends StatelessWidget {
+  const _JourneyRow(
+      {required this.index,
+      required this.current,
+      required this.completed,
+      required this.onTap});
+  final int index;
+  final bool current, completed;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) {
+    final item = umrahGuide[index];
+    return Padding(
+        padding: const EdgeInsets.only(bottom: 9),
+        child: Material(
+          color: current ? const Color(0xFFEDF4E9) : Colors.white,
+          borderRadius: BorderRadius.circular(21),
+          child: InkWell(
+              onTap: onTap,
+              borderRadius: BorderRadius.circular(21),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 13, vertical: 12),
+                decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(21),
+                    border: Border.all(
+                        color: current
+                            ? const Color(0xFFD1BB87)
+                            : const Color(0xFFECE1CF)),
+                    boxShadow: [
+                      BoxShadow(
+                          color: UGold.deep.withOpacity(.04),
+                          blurRadius: 9,
+                          offset: const Offset(0, 3))
+                    ]),
+                child: Row(children: [
+                  Container(
+                      width: 35,
+                      height: 35,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color:
+                              current ? UGold.green : const Color(0xFFF4ECDC),
+                          border: Border.all(
+                              color: current
+                                  ? UGold.gold
+                                  : const Color(0xFFE0D3B7))),
+                      child: completed
+                          ? Icon(Icons.check_rounded,
+                              color: current ? Colors.white : UGold.green,
+                              size: 20)
+                          : Text('${index + 1}',
+                              style: TextStyle(
+                                  color: current ? Colors.white : UGold.ink,
+                                  fontWeight: FontWeight.w800))),
+                  const SizedBox(width: 12),
+                  Expanded(
+                      child: Text(item.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              color: UGold.deep,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w800))),
+                  Container(
+                      width: 38,
+                      height: 38,
+                      decoration: const BoxDecoration(
+                          color: Color(0xFFF6EAD4), shape: BoxShape.circle),
+                      child:
+                          Icon(_stepIcons[index], color: UGold.deep, size: 21)),
+                  const SizedBox(width: 4),
+                  const Icon(Icons.chevron_left_rounded,
+                      size: 21, color: UGold.ink),
+                ]),
+              )),
+        ));
+  }
+}
+
+class _CtaButton extends StatelessWidget {
+  const _CtaButton(
+      {required this.label, required this.icon, required this.onTap});
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => SizedBox(
+        width: double.infinity,
+        height: 53,
+        child: FilledButton.icon(
+            onPressed: onTap,
+            icon: Icon(icon, size: 19),
+            label: Text(label,
+                textAlign: TextAlign.center,
+                style:
+                    const TextStyle(fontWeight: FontWeight.w800, fontSize: 14)),
+            style: FilledButton.styleFrom(
+                backgroundColor: UGold.deep,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(18)),
+                side: const BorderSide(color: UGold.gold, width: 1.4))),
       );
 }
 
-class _HeaderRing extends CustomPainter {
-  final double value;
-  _HeaderRing(this.value);
-  @override
-  void paint(Canvas canvas, Size size) {
-    const w = 7.0;
-    final r = (Offset.zero & size).deflate(w / 2);
-    canvas.drawArc(
-        r,
-        0,
-        math.pi * 2,
-        false,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = w
-          ..color = Colors.white24);
-    if (value > 0) {
-      canvas.drawArc(
-          r,
-          -math.pi / 2,
-          math.pi * 2 * value,
-          false,
-          Paint()
-            ..style = PaintingStyle.stroke
-            ..strokeCap = StrokeCap.round
-            ..strokeWidth = w
-            ..color = AppColors.gold);
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _HeaderRing old) => old.value != value;
-}
-
-// ═══════════════════════ أدوات ═══════════════════════
-class _ToolChip extends StatelessWidget {
-  final _Tool tool;
+class _MiniTool extends StatelessWidget {
+  const _MiniTool(
+      {required this.image, required this.title, required this.onTap});
+  final String image, title;
   final VoidCallback onTap;
-  const _ToolChip({required this.tool, required this.onTap});
-
   @override
-  Widget build(BuildContext context) {
-    return Material(
+  Widget build(BuildContext context) => Material(
       color: Colors.white,
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
-        borderRadius: BorderRadius.circular(20),
-        onTap: onTap,
-        child: Container(
-          width: 88,
-          padding: const EdgeInsets.fromLTRB(6, 12, 6, 10),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: UC.border),
-          ),
-          child: Column(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFEADEC9))),
+            child: Column(children: [
+              ClipRRect(
                   borderRadius: BorderRadius.circular(14),
-                  gradient: LinearGradient(colors: tool.colors),
-                ),
-                child: Icon(tool.icon, color: Colors.white, size: 23),
-              ),
-              const SizedBox(height: 8),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(tool.label,
-                    style: const TextStyle(
-                        color: UC.ink,
-                        fontSize: 12.5,
-                        fontWeight: FontWeight.w700)),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
+                  child: AspectRatio(
+                      aspectRatio: 1.75, child: UPhoto(asset: image))),
+              Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 9),
+                  child: Text(title,
+                      style: const TextStyle(
+                          color: UGold.deep, fontWeight: FontWeight.w900))),
+            ]),
+          )));
 }
 
-// ═══════════════════════ مسار الخطوات ═══════════════════════
-class _PathRow extends StatelessWidget {
-  final int current;
-  final bool Function(int) isDone;
-  final ValueChanged<int> onTap;
-  const _PathRow(
-      {required this.current, required this.isDone, required this.onTap});
-
+class UmrahToolsGallery extends StatelessWidget {
+  const UmrahToolsGallery({super.key});
   @override
   Widget build(BuildContext context) {
-    const lineOn = AppColors.gold;
-    final lineOff = UC.border;
-    return Row(
-      children: [
-        for (int i = 0; i < 7; i++)
-          Expanded(
-            child: InkWell(
-              borderRadius: BorderRadius.circular(12),
-              onTap: () => onTap(i),
-              child: Column(
-                children: [
-                  SizedBox(
-                    height: 40,
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Container(
-                                height: 3,
-                                color: i == 0
-                                    ? Colors.transparent
-                                    : (isDone(i - 1) ? lineOn : lineOff),
-                              ),
-                            ),
-                            Expanded(
-                              child: Container(
-                                height: 3,
-                                color: i == 6
-                                    ? Colors.transparent
-                                    : (isDone(i) ? lineOn : lineOff),
-                              ),
-                            ),
-                          ],
-                        ),
-                        _Node(index: i, current: i == current, done: isDone(i)),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 1),
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        umrahGuide[i].tabLabel,
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: i == current ? AppColors.greenDark : UC.muted,
-                          fontWeight:
-                              i == current ? FontWeight.w800 : FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+    const tools = <({
+      String title,
+      String subtitle,
+      String image,
+      IconData icon,
+      Widget page
+    })>[
+      (
+        title: 'طواف 3D',
+        subtitle: 'جولة تفاعلية حول الكعبة',
+        image: 'assets/umrah/tool_tawaf.jpg',
+        icon: Icons.view_in_ar_rounded,
+        page: UmrahImmersiveTourPage(tawaf: true)
+      ),
+      (
+        title: 'سعي 3D',
+        subtitle: 'مسار الصفا والمروة',
+        image: 'assets/umrah/tool_sai.jpg',
+        icon: Icons.directions_walk_rounded,
+        page: UmrahImmersiveTourPage(tawaf: false)
+      ),
+      (
+        title: 'المواقيت',
+        subtitle: 'أماكن الإحرام',
+        image: 'assets/umrah/tool_miqat.jpg',
+        icon: Icons.explore_rounded,
+        page: MawaqitPage()
+      ),
+      (
+        title: 'المحظورات',
+        subtitle: 'الممنوع والمباح',
+        image: 'assets/umrah/tool_rules.jpg',
+        icon: Icons.block_rounded,
+        page: IhramRulesPage()
+      ),
+      (
+        title: 'أسئلة شائعة',
+        subtitle: 'إجابات موثوقة',
+        image: 'assets/umrah/tool_faq.jpg',
+        icon: Icons.help_outline_rounded,
+        page: FaqPage()
+      ),
+      (
+        title: 'اختبر نفسك',
+        subtitle: 'راجع معلوماتك',
+        image: 'assets/umrah/tool_quiz.jpg',
+        icon: Icons.quiz_outlined,
+        page: QuizPage()
+      ),
+      (
+        title: 'حقيبتك',
+        subtitle: 'قائمة تجهيزات العمرة',
+        image: 'assets/umrah/tool_bag.jpg',
+        icon: Icons.luggage_outlined,
+        page: ChecklistPage()
+      ),
+    ];
+    return Directionality(
+        textDirection: TextDirection.rtl,
+        child: Scaffold(
+          backgroundColor: UGold.cream,
+          body: CustomScrollView(slivers: [
+            SliverAppBar(
+                pinned: true,
+                backgroundColor: UGold.cream,
+                foregroundColor: UGold.deep,
+                title: const Text('أدوات العمرة',
+                    style: TextStyle(fontWeight: FontWeight.w900)),
+                centerTitle: true),
+            const SliverToBoxAdapter(
+                child: Padding(
+                    padding: EdgeInsets.fromLTRB(22, 16, 22, 18),
+                    child: Text('أدوات تفاعلية تساعدك في كل مرحلة من رحلتك',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: UGold.ink, fontSize: 13)))),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              sliver: SliverLayoutBuilder(builder: (context, constraints) {
+                final cols = constraints.crossAxisExtent < 350
+                    ? 2
+                    : (constraints.crossAxisExtent < 700 ? 2 : 3);
+                return SliverGrid.builder(
+                  itemCount: tools.length,
+                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: cols,
+                      crossAxisSpacing: 11,
+                      mainAxisSpacing: 11,
+                      mainAxisExtent: 219),
+                  itemBuilder: (c, i) => _ToolGalleryCard(
+                      title: tools[i].title,
+                      subtitle: tools[i].subtitle,
+                      image: tools[i].image,
+                      icon: tools[i].icon,
+                      onTap: () => Navigator.push(context,
+                          MaterialPageRoute(builder: (_) => tools[i].page))),
+                );
+              }),
             ),
-          ),
-      ],
-    );
+            const SliverToBoxAdapter(child: SizedBox(height: 30)),
+          ]),
+        ));
   }
 }
 
-class _Node extends StatelessWidget {
-  final int index;
-  final bool current, done;
-  const _Node({required this.index, required this.current, required this.done});
+class _ToolGalleryCard extends StatelessWidget {
+  const _ToolGalleryCard(
+      {required this.title,
+      required this.subtitle,
+      required this.image,
+      required this.icon,
+      required this.onTap});
+  final String title, subtitle, image;
+  final IconData icon;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(23),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(23),
+        child: Container(
+          padding: const EdgeInsets.all(7),
+          decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(23),
+              border: Border.all(color: const Color(0xFFE8DCC8))),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            SizedBox(
+                height: 122,
+                width: double.infinity,
+                child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: Stack(fit: StackFit.expand, children: [
+                      UPhoto(asset: image),
+                      const DecoratedBox(
+                          decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                            Colors.transparent,
+                            Color(0x62092E26)
+                          ]))),
+                      Center(
+                          child: Container(
+                              width: 52,
+                              height: 52,
+                              decoration: BoxDecoration(
+                                  color: UGold.deep.withOpacity(.93),
+                                  borderRadius: BorderRadius.circular(16),
+                                  border: Border.all(color: UGold.gold)),
+                              child: Icon(icon, color: UGold.gold, size: 29))),
+                    ]))),
+            const SizedBox(height: 10),
+            Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 5),
+                child: Text(title,
+                    style: const TextStyle(
+                        color: UGold.deep,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900))),
+            Padding(
+                padding: const EdgeInsets.fromLTRB(5, 3, 5, 0),
+                child: Text(subtitle,
+                    maxLines: 2,
+                    style: const TextStyle(
+                        color: UGold.ink, fontSize: 11, height: 1.3))),
+            const Spacer(),
+            const Align(
+                alignment: Alignment.centerLeft,
+                child: Padding(
+                    padding: EdgeInsets.only(left: 6, bottom: 2),
+                    child: CircleAvatar(
+                        radius: 14,
+                        backgroundColor: UGold.green,
+                        child: Icon(Icons.arrow_back_rounded,
+                            color: Colors.white, size: 16)))),
+          ]),
+        ),
+      ));
+}
 
+/// Separate step page matching the centre reference screen, including live progress.
+class UmrahStepPage extends StatefulWidget {
+  const UmrahStepPage({super.key, required this.index});
+  final int index;
+  @override
+  State<UmrahStepPage> createState() => _UmrahStepPageState();
+}
+
+class _UmrahStepPageState extends State<UmrahStepPage> {
+  late int current = widget.index;
+  int tab = 0;
+  double duaScale = 1;
   @override
   Widget build(BuildContext context) {
-    final size = current ? 38.0 : 32.0;
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 250),
-      width: size,
-      height: size,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: current
-            ? const LinearGradient(
-                colors: [AppColors.green, AppColors.greenDark])
-            : null,
-        color: current ? null : (done ? AppColors.gold : Colors.white),
-        border: Border.all(
-          color: current ? AppColors.gold : (done ? AppColors.gold : UC.border),
-          width: current ? 2.5 : 1.5,
-        ),
-        boxShadow: current
-            ? [
-                BoxShadow(
-                  color: AppColors.green.withOpacity(.35),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
-                ),
-              ]
-            : null,
-      ),
-      child: done && !current
-          ? const Icon(Icons.check_rounded, color: Colors.white, size: 18)
-          : Text('${index + 1}',
-              style: TextStyle(
-                color: current ? Colors.white : UC.muted,
-                fontWeight: FontWeight.w800,
-                fontSize: 13,
-              )),
-    );
+    final st = AppScope.of(context);
+    final s = umrahGuide[current];
+    return Directionality(
+        textDirection: TextDirection.rtl,
+        child: Scaffold(
+          backgroundColor: UGold.cream,
+          body: CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                SliverToBoxAdapter(child: _StepHero(index: current, step: s)),
+                SliverToBoxAdapter(
+                    child: Padding(
+                        padding: const EdgeInsets.fromLTRB(18, 15, 18, 0),
+                        child: Row(children: [
+                          _Tag(Icons.timer_outlined, s.duration),
+                          const SizedBox(width: 7),
+                          _Tag(Icons.verified_outlined, s.rank),
+                          const Spacer(),
+                          Text('الخطوة ${current + 1} من 7',
+                              style: const TextStyle(
+                                  color: UGold.ink,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 11)),
+                        ]))),
+                SliverToBoxAdapter(
+                    child: Padding(
+                        padding: const EdgeInsets.fromLTRB(21, 20, 21, 13),
+                        child: Text(s.summary,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                                color: UGold.ink, height: 1.7, fontSize: 14)))),
+                SliverToBoxAdapter(
+                    child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: Row(children: [
+                          Expanded(
+                              child: _StepQuickBtn(
+                                  icon: Icons.headphones_rounded,
+                                  title: 'جولة صوتية',
+                                  onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (_) => UmrahAudioPage(
+                                              index: current))))),
+                          const SizedBox(width: 7),
+                          Expanded(
+                              child: _StepQuickBtn(
+                                  icon: Icons.menu_book_outlined,
+                                  title: 'الدعاء',
+                                  onTap: () => setState(() => tab = 1))),
+                          const SizedBox(width: 7),
+                          Expanded(
+                              child: _StepQuickBtn(
+                                  icon: Icons.play_arrow_rounded,
+                                  title: 'استمع للشرح',
+                                  primary: true,
+                                  onTap: () => Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (_) => UmrahAudioPage(
+                                              index: current))))),
+                        ]))),
+                SliverToBoxAdapter(
+                    child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 19, 16, 18),
+                        child: _SegmentedStep(
+                            selected: tab,
+                            onSelect: (i) => setState(() => tab = i)))),
+                SliverToBoxAdapter(
+                    child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 19),
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 230),
+                          child: KeyedSubtree(
+                              key: ValueKey('$current-$tab'),
+                              child: tab == 1
+                                  ? _DuaContent(
+                                      step: s,
+                                      scale: duaScale,
+                                      onScale: (v) =>
+                                          setState(() => duaScale = v))
+                                  : tab == 2
+                                      ? _ErrorsContent(step: s)
+                                      : _StepsContent(step: s)),
+                        ))),
+                if (s.sim != null)
+                  SliverToBoxAdapter(
+                      child: Padding(
+                          padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
+                          child: _CtaButton(
+                              label: s.sim == 'tawaf'
+                                  ? 'جرّبي الطواف التفاعلي 3D'
+                                  : 'جرّبي السعي التفاعلي 3D',
+                              icon: Icons.view_in_ar_rounded,
+                              onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) => UmrahImmersiveTourPage(
+                                          tawaf: s.sim == 'tawaf')))))),
+                if (s.sim != null)
+                  SliverToBoxAdapter(
+                      child: Padding(
+                          padding: const EdgeInsets.fromLTRB(18, 12, 18, 0),
+                          child: _ManualCounter(type: s.sim!))),
+                SliverToBoxAdapter(
+                    child: Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 24, 16, 0),
+                        child: _CtaButton(
+                            label: current == 6
+                                ? 'أتممت العمرة — تقبّل الله'
+                                : 'أكملت هذه الخطوة  ·  التالية',
+                            icon: Icons.check_circle_outline_rounded,
+                            onTap: () {
+                              HapticFeedback.mediumImpact();
+                              st.change(() {
+                                st.done.add(current);
+                                if (current < 6) st.step = current + 1;
+                              });
+                              if (current < 6) {
+                                setState(() {
+                                  current++;
+                                  tab = 0;
+                                });
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content:
+                                            Text('تقبّل الله منك عمرتك 🤲')));
+                              }
+                            }))),
+                if (current > 0)
+                  SliverToBoxAdapter(
+                      child: Center(
+                          child: TextButton.icon(
+                              onPressed: () => setState(() {
+                                    current--;
+                                    tab = 0;
+                                    st.change(() => st.step = current);
+                                  }),
+                              icon: const Icon(Icons.chevron_right_rounded),
+                              label: const Text('الخطوة السابقة')))),
+                const SliverToBoxAdapter(
+                    child: Padding(
+                        padding: EdgeInsets.fromLTRB(20, 16, 20, 26),
+                        child: Text(
+                            'محتوى إرشادي عام، وللفتوى الخاصة راجعي أهل العلم.',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(color: UGold.ink, fontSize: 11)))),
+              ]),
+        ));
   }
 }
 
-// ═══════════════════════ مكونات صغيرة ═══════════════════════
-class _Badge extends StatelessWidget {
-  final String text;
-  final Color color;
-  const _Badge(this.text, this.color);
+class _StepHero extends StatelessWidget {
+  const _StepHero({required this.index, required this.step});
+  final int index;
+  final UStep step;
+  @override
+  Widget build(BuildContext context) {
+    final top = MediaQuery.paddingOf(context).top;
+    return SizedBox(
+        height: 310 + top,
+        child: Stack(fit: StackFit.expand, children: [
+          UPhoto(asset: 'assets/umrah/step_${index + 1}.jpg'),
+          const DecoratedBox(
+              decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                Color(0x66051F1B),
+                Colors.transparent,
+                Color(0xD4073C30)
+              ]))),
+          Positioned(
+              top: top + 10,
+              right: 12,
+              left: 12,
+              child: Row(children: [
+                Material(
+                    color: const Color(0xCFFFFFF7),
+                    shape: const CircleBorder(),
+                    child: IconButton(
+                        icon: const Icon(Icons.arrow_forward_rounded,
+                            color: UGold.deep),
+                        onPressed: () => Navigator.pop(context))),
+                const Spacer(),
+                Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                    decoration: BoxDecoration(
+                        color: const Color(0xCEFFF9EE),
+                        borderRadius: BorderRadius.circular(30)),
+                    child: Text('الخطوة ${index + 1} من 7',
+                        style: const TextStyle(
+                            color: UGold.deep,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800))),
+              ])),
+          Positioned(
+              bottom: 24,
+              right: 23,
+              left: 23,
+              child: Column(children: [
+                Text(step.title,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                        fontSize: 30,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                        shadows: [
+                          Shadow(color: Colors.black54, blurRadius: 8)
+                        ])),
+                const SizedBox(height: 6),
+                Text(step.summary,
+                    textAlign: TextAlign.center,
+                    maxLines: 2,
+                    style: const TextStyle(
+                        color: Color(0xFFFFF0D6), fontSize: 13, height: 1.5)),
+              ])),
+        ]));
+  }
+}
+
+class _Tag extends StatelessWidget {
+  const _Tag(this.icon, this.title);
+  final IconData icon;
+  final String title;
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-        decoration: BoxDecoration(
-            color: color, borderRadius: BorderRadius.circular(20)),
-        child: Text(text,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      decoration: BoxDecoration(
+          color: const Color(0xFFE7F0E7),
+          borderRadius: BorderRadius.circular(25)),
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Icon(icon, color: UGold.green, size: 15),
+        const SizedBox(width: 5),
+        Text(title,
             style: const TextStyle(
-                color: UC.ink, fontSize: 12, fontWeight: FontWeight.w700)),
-      );
+                fontSize: 11.5, fontWeight: FontWeight.w700, color: UGold.deep))
+      ]));
 }
 
-class _Tabs extends StatelessWidget {
-  final int sel;
-  final ValueChanged<int> on;
-  const _Tabs({required this.sel, required this.on});
-
-  static const labels = ['الشرح', 'الدعاء', 'أخطاء شائعة'];
-
+class _StepQuickBtn extends StatelessWidget {
+  const _StepQuickBtn(
+      {required this.icon,
+      required this.title,
+      required this.onTap,
+      this.primary = false});
+  final IconData icon;
+  final String title;
+  final VoidCallback onTap;
+  final bool primary;
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(4),
+  Widget build(BuildContext context) => Material(
+      color: primary ? UGold.deep : Colors.white,
+      borderRadius: BorderRadius.circular(19),
+      child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(19),
+          child: SizedBox(
+              height: 78,
+              child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(icon,
+                        color: primary ? UGold.gold : UGold.deep, size: 24),
+                    const SizedBox(height: 6),
+                    Text(title,
+                        style: TextStyle(
+                            color: primary ? Colors.white : UGold.deep,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w800))
+                  ]))));
+}
+
+class _SegmentedStep extends StatelessWidget {
+  const _SegmentedStep({required this.selected, required this.onSelect});
+  final int selected;
+  final ValueChanged<int> onSelect;
+  @override
+  Widget build(BuildContext context) => Container(
+      padding: const EdgeInsets.all(5),
       decoration: BoxDecoration(
-        color: AppColors.softGreen,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          for (int k = 0; k < labels.length; k++)
-            Expanded(
+          color: const Color(0xFFE6EEE7),
+          borderRadius: BorderRadius.circular(17)),
+      child: Row(children: [
+        for (var i = 0; i < 3; i++)
+          Expanded(
               child: GestureDetector(
-                onTap: () => on(k),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 200),
-                  padding: const EdgeInsets.symmetric(vertical: 10),
-                  alignment: Alignment.center,
+                  onTap: () => onSelect(i),
+                  child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.symmetric(vertical: 11),
+                      decoration: BoxDecoration(
+                          color:
+                              selected == i ? UGold.deep : Colors.transparent,
+                          borderRadius: BorderRadius.circular(13)),
+                      child: Text(['الشرح', 'الدعاء', 'أخطاء شائعة'][i],
+                          style: TextStyle(
+                              color: selected == i ? Colors.white : UGold.deep,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800))))),
+      ]));
+}
+
+class _StepsContent extends StatelessWidget {
+  const _StepsContent({required this.step});
+  final UStep step;
+  @override
+  Widget build(BuildContext context) =>
+      Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Padding(
+            padding: const EdgeInsets.only(bottom: 13),
+            child: Text('خطوات ${step.title}',
+                style: const TextStyle(
+                    color: UGold.deep,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 17))),
+        for (var i = 0; i < step.how.length; i++)
+          Padding(
+              padding: const EdgeInsets.only(bottom: 15),
+              child:
+                  Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Container(
+                    width: 27,
+                    height: 27,
+                    alignment: Alignment.center,
+                    decoration: const BoxDecoration(
+                        color: UGold.green, shape: BoxShape.circle),
+                    child: Text('${i + 1}',
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 12))),
+                const SizedBox(width: 12),
+                Expanded(
+                    child: Text(step.how[i],
+                        style: const TextStyle(
+                            color: UGold.deep, height: 1.75, fontSize: 14))),
+              ])),
+        _Notice(
+            icon: Icons.lightbulb_outline_rounded,
+            title: 'نصيحة',
+            text: step.tip),
+        if (step.women != null)
+          Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: _Notice(
+                  icon: Icons.spa_rounded,
+                  title: 'للمرأة',
+                  text: step.women!,
+                  lavender: true)),
+      ]);
+}
+
+class _Notice extends StatelessWidget {
+  const _Notice(
+      {required this.icon,
+      required this.title,
+      required this.text,
+      this.lavender = false});
+  final IconData icon;
+  final String title, text;
+  final bool lavender;
+  @override
+  Widget build(BuildContext context) => Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+          color: lavender ? const Color(0xFFF5EDF8) : const Color(0xFFF8EBCF),
+          borderRadius: BorderRadius.circular(20)),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          Icon(icon, color: UGold.deep),
+          const SizedBox(width: 6),
+          Text(title,
+              style: const TextStyle(
+                  color: UGold.deep, fontWeight: FontWeight.w900))
+        ]),
+        const SizedBox(height: 6),
+        Text(text,
+            style: const TextStyle(color: UGold.ink, height: 1.7, fontSize: 13))
+      ]));
+}
+
+class _DuaContent extends StatelessWidget {
+  const _DuaContent(
+      {required this.step, required this.scale, required this.onScale});
+  final UStep step;
+  final double scale;
+  final ValueChanged<double> onScale;
+  @override
+  Widget build(BuildContext context) => Column(children: [
+        Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(19),
+            decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(21),
+                gradient:
+                    const LinearGradient(colors: [UGold.green, UGold.deep])),
+            child: Column(children: [
+              const Icon(Icons.auto_awesome_rounded, color: UGold.gold),
+              const SizedBox(height: 10),
+              SelectableText(step.dua,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20 * scale,
+                      height: 1.95,
+                      fontWeight: FontWeight.w700)),
+            ])),
+        Row(children: [
+          IconButton(
+              tooltip: 'تصغير النص',
+              onPressed: () => onScale((scale - .1).clamp(.8, 1.5).toDouble()),
+              icon: const Icon(Icons.text_decrease_rounded, color: UGold.deep)),
+          IconButton(
+              tooltip: 'تكبير النص',
+              onPressed: () => onScale((scale + .1).clamp(.8, 1.5).toDouble()),
+              icon: const Icon(Icons.text_increase_rounded, color: UGold.deep)),
+          const Spacer(),
+          TextButton.icon(
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: step.dua));
+                ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('تم نسخ الدعاء')));
+              },
+              icon: const Icon(Icons.copy_rounded),
+              label: const Text('نسخ'))
+        ]),
+        _Notice(
+            icon: Icons.info_outline,
+            title: 'معلومة عن الدعاء',
+            text: step.duaNote),
+      ]);
+}
+
+class _ErrorsContent extends StatelessWidget {
+  const _ErrorsContent({required this.step});
+  final UStep step;
+  @override
+  Widget build(BuildContext context) => Column(children: [
+        for (final issue in step.errors)
+          Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(15),
                   decoration: BoxDecoration(
-                    color: sel == k ? Colors.white : Colors.transparent,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: sel == k
-                        ? [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(.06),
-                              blurRadius: 6,
-                              offset: const Offset(0, 2),
-                            ),
-                          ]
-                        : null,
-                  ),
-                  child: Text(labels[k],
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: const Color(0xFFEBDECC))),
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(children: [
+                          const Icon(Icons.error_outline,
+                              color: Color(0xFFB05042)),
+                          const SizedBox(width: 8),
+                          Expanded(
+                              child: Text(issue.wrong,
+                                  style: const TextStyle(
+                                      color: UGold.ink,
+                                      height: 1.55,
+                                      fontWeight: FontWeight.w700)))
+                        ]),
+                        const Divider(height: 24),
+                        Row(children: [
+                          const Icon(Icons.check_circle_outline,
+                              color: UGold.green),
+                          const SizedBox(width: 8),
+                          Expanded(
+                              child: Text(issue.right,
+                                  style: const TextStyle(
+                                      color: UGold.ink, height: 1.55)))
+                        ]),
+                      ])))
+      ]);
+}
+
+class UmrahAudioPage extends StatelessWidget {
+  const UmrahAudioPage({super.key, required this.index});
+  final int index;
+  @override
+  Widget build(BuildContext context) => Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+          backgroundColor: UGold.cream,
+          body: CustomScrollView(slivers: [
+            SliverAppBar(
+                pinned: true,
+                backgroundColor: UGold.cream,
+                foregroundColor: UGold.deep,
+                title: const Text('جولة صوتية',
+                    style: TextStyle(fontWeight: FontWeight.w900)),
+                centerTitle: true),
+            SliverToBoxAdapter(
+                child: SizedBox(
+                    height: 242,
+                    child: Stack(fit: StackFit.expand, children: [
+                      const UPhoto(asset: 'assets/umrah/umrah_hero.jpg'),
+                      const DecoratedBox(
+                          decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                  begin: Alignment.topCenter,
+                                  end: Alignment.bottomCenter,
+                                  colors: [
+                            Color(0x35FFFFFF),
+                            Color(0xC4FFF8EB)
+                          ]))),
+                      const Center(
+                          child: Icon(Icons.headphones_rounded,
+                              size: 105, color: UGold.deep)),
+                      const Positioned(
+                          bottom: 15,
+                          right: 0,
+                          left: 0,
+                          child: Text('استمع إلى مناسك العمرة خطوة بخطوة',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                  color: UGold.deep,
+                                  fontWeight: FontWeight.w800))),
+                    ]))),
+            SliverToBoxAdapter(
+                child: Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 19, 16, 14),
+                    child: RifqaNarrationPlayer(
+                        stepIndex: index,
+                        onDua: () => showModalBottomSheet(
+                            context: context,
+                            showDragHandle: true,
+                            isScrollControlled: true,
+                            builder: (c) => SafeArea(
+                                child: SingleChildScrollView(
+                                    padding: const EdgeInsets.all(22),
+                                    child: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          const Text('الدعاء',
+                                              style: TextStyle(
+                                                  fontSize: 20,
+                                                  fontWeight: FontWeight.w900)),
+                                          const SizedBox(height: 12),
+                                          SelectableText(umrahGuide[index].dua,
+                                              textAlign: TextAlign.center,
+                                              style: const TextStyle(
+                                                  fontSize: 19, height: 1.9)),
+                                          const SizedBox(height: 12),
+                                          Text(umrahGuide[index].duaNote,
+                                              textAlign: TextAlign.center)
+                                        ]))))))),
+            const SliverToBoxAdapter(
+                child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 24),
+                    child: Text(
+                        'التعليق الوثائقي المسجّل، وليس قراءة صوت آلية. للتشغيل الكامل دون إنترنت أضيفي ملفات التسجيلات الكاملة.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: UGold.ink, fontSize: 12, height: 1.6)))),
+          ])));
+}
+
+class UmrahImmersiveTourPage extends StatelessWidget {
+  const UmrahImmersiveTourPage({super.key, required this.tawaf});
+  final bool tawaf;
+  @override
+  Widget build(BuildContext context) => Directionality(
+      textDirection: TextDirection.rtl,
+      child: Scaffold(
+          backgroundColor: UGold.cream,
+          body: Column(children: [
+            Expanded(
+                child: Stack(fit: StackFit.expand, children: [
+              UPhoto(
+                  asset: tawaf
+                      ? 'assets/umrah/tawaf_panorama.jpg'
+                      : 'assets/umrah/sai_panorama.jpg'),
+              const DecoratedBox(
+                  decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                    Color(0xB9083029),
+                    Colors.transparent,
+                    Color(0xAA082F28)
+                  ]))),
+              Positioned(
+                  top: MediaQuery.paddingOf(context).top + 10,
+                  right: 12,
+                  left: 12,
+                  child: Row(children: [
+                    Material(
+                        color: const Color(0xB0083F32),
+                        shape: const CircleBorder(),
+                        child: IconButton(
+                            onPressed: () => Navigator.pop(context),
+                            icon: const Icon(Icons.arrow_forward,
+                                color: Colors.white))),
+                    Expanded(
+                        child: Column(children: [
+                      Text(tawaf ? 'طواف 3D' : 'سعي 3D',
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w900)),
+                      const Text('تعرّفي على المسار قبل أداء النسك',
+                          style:
+                              TextStyle(color: Color(0xFFFFE0A3), fontSize: 12))
+                    ])),
+                    const SizedBox(width: 47),
+                  ])),
+              Positioned(
+                  bottom: 24,
+                  right: 20,
+                  left: 20,
+                  child: Container(
+                      padding: const EdgeInsets.all(15),
+                      decoration: BoxDecoration(
+                          color: const Color(0xDF083A30),
+                          borderRadius: BorderRadius.circular(23),
+                          border: Border.all(color: UGold.gold)),
+                      child: Column(children: [
+                        Icon(
+                            tawaf
+                                ? Icons.view_in_ar_rounded
+                                : Icons.directions_walk_rounded,
+                            color: UGold.gold,
+                            size: 32),
+                        const SizedBox(height: 8),
+                        Text(
+                            tawaf
+                                ? 'سبعة أشواط حول الكعبة'
+                                : 'سبعة أشواط بين الصفا والمروة',
+                            style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w900,
+                                fontSize: 17)),
+                        const SizedBox(height: 7),
+                        Text(
+                            tawaf
+                                ? 'تبدأ من الحجر الأسود، والكعبة عن يسارك'
+                                : 'تبدأ من الصفا وتنتهي عند المروة',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                                color: Color(0xFFFFE8BD),
+                                fontSize: 12,
+                                height: 1.5)),
+                      ]))),
+            ])),
+            Padding(
+                padding: EdgeInsets.fromLTRB(
+                    18, 12, 18, MediaQuery.paddingOf(context).bottom + 16),
+                child: Column(children: [
+                  _CtaButton(
+                      label: 'ابدئي المحاكاة التفاعلية 3D',
+                      icon: Icons.play_arrow_rounded,
+                      onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => tawaf
+                                  ? const Tawaf3DPage()
+                                  : const Sai3DPage()))),
+                  const SizedBox(height: 8),
+                  const Text(
+                      'الصورة معاينة سينمائية، والمحاكاة في الخطوة التالية مجسم تفاعلي يتحرك ويمكن تغيير منظور الكاميرا فيه.',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: sel == k ? AppColors.greenDark : UC.muted,
-                        fontWeight: FontWeight.w800,
-                        fontSize: 13,
-                      )),
-                ),
-              ),
-            ),
-        ],
-      ),
+                          color: UGold.ink, fontSize: 10.5, height: 1.5)),
+                ])),
+          ])));
+}
+
+/// Manual counters remain available even without launching the animated 3D.
+/// 3D engines update these same two AppScope values.
+class _ManualCounter extends StatelessWidget {
+  const _ManualCounter({required this.type});
+  final String type;
+  @override
+  Widget build(BuildContext context) {
+    final st = AppScope.of(context);
+    final isTawaf = type == 'tawaf';
+    final n = isTawaf ? st.tawaf : st.sai;
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: const Color(0xFFE6D8C2))),
+      child: Column(children: [
+        Row(children: [
+          Icon(
+              isTawaf
+                  ? Icons.view_in_ar_rounded
+                  : Icons.directions_walk_rounded,
+              color: UGold.deep),
+          const SizedBox(width: 8),
+          Expanded(
+              child: Text(isTawaf ? 'عدّاد أشواط الطواف' : 'عدّاد أشواط السعي',
+                  style: const TextStyle(
+                      color: UGold.deep, fontWeight: FontWeight.w800))),
+          Text('$n / 7',
+              textDirection: TextDirection.ltr,
+              style: const TextStyle(
+                  color: UGold.deep,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 19)),
+        ]),
+        const SizedBox(height: 8),
+        LinearProgressIndicator(
+            value: n.clamp(0, 7) / 7.0,
+            backgroundColor: const Color(0xFFE4E9DF),
+            color: UGold.green,
+            borderRadius: BorderRadius.circular(10),
+            minHeight: 7),
+        const SizedBox(height: 12),
+        Row(children: [
+          Expanded(
+              child: OutlinedButton.icon(
+                  onPressed: n == 0
+                      ? null
+                      : () => st.change(() {
+                            if (isTawaf) {
+                              st.tawaf = n - 1;
+                            } else {
+                              st.sai = n - 1;
+                            }
+                          }),
+                  icon: const Icon(Icons.remove_rounded),
+                  label: const Text('تراجع'))),
+          const SizedBox(width: 10),
+          Expanded(
+              child: FilledButton.icon(
+                  onPressed: n >= 7
+                      ? null
+                      : () => st.change(() {
+                            if (isTawaf) {
+                              st.tawaf = n + 1;
+                            } else {
+                              st.sai = n + 1;
+                            }
+                          }),
+                  icon: const Icon(Icons.add_rounded),
+                  label: Text(isTawaf ? 'أتممت شوطًا' : 'وصلت الطرف الآخر'),
+                  style: FilledButton.styleFrom(backgroundColor: UGold.green))),
+        ]),
+      ]),
     );
   }
 }
 
-class _Congrats extends StatelessWidget {
-  final VoidCallback onReset;
-  const _Congrats({required this.onReset});
-
+/// Public compatibility widgets retained for any other page that imported them.
+class CounterCard extends StatelessWidget {
+  const CounterCard({super.key, required this.type});
+  final String type;
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24),
-        gradient: const LinearGradient(colors: UC.gold),
-      ),
-      child: Column(
-        children: [
-          const Text('🤲', style: TextStyle(fontSize: 34)),
-          const SizedBox(height: 6),
-          const Text('تقبّل الله عمرتك',
-              style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 19,
-                  fontWeight: FontWeight.w900)),
-          const SizedBox(height: 4),
-          const Text(
-              'أتممت الخطوات السبع. نسأل الله أن يجعلها مبرورة وذنبك مغفورًا.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white, height: 1.5)),
-          TextButton(
-            onPressed: onReset,
-            child: const Text('ابدأ عمرة جديدة',
-                style: TextStyle(
-                    color: Colors.white, fontWeight: FontWeight.w800)),
-          ),
-        ],
-      ),
-    );
-  }
+  Widget build(BuildContext context) => _ManualCounter(type: type);
 }
 
 class InfoBox extends StatelessWidget {
+  const InfoBox(this.title, this.text, this.color,
+      {super.key, this.center = false});
   final String title, text;
   final Color color;
   final bool center;
-  const InfoBox(this.title, this.text, this.color,
-      {super.key, this.center = false});
-
   @override
-  Widget build(BuildContext c) => Container(
+  Widget build(BuildContext context) => Container(
         width: double.infinity,
         margin: const EdgeInsets.only(top: 8),
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(13),
         decoration: BoxDecoration(
-            color: color, borderRadius: BorderRadius.circular(14)),
+            color: color, borderRadius: BorderRadius.circular(17)),
         child: Column(
-          crossAxisAlignment:
-              center ? CrossAxisAlignment.center : CrossAxisAlignment.start,
-          children: [
-            Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
-            const SizedBox(height: 2),
-            Text(text,
-                textAlign: center ? TextAlign.center : null,
-                style: TextStyle(
-                    fontSize: center ? 20 : 14.5,
-                    height: center ? 1.8 : 1.5,
-                    color: AppColors.ink)),
-          ],
-        ),
+            crossAxisAlignment:
+                center ? CrossAxisAlignment.center : CrossAxisAlignment.start,
+            children: [
+              Text(title,
+                  textAlign: center ? TextAlign.center : null,
+                  style: const TextStyle(
+                      color: UGold.deep, fontWeight: FontWeight.w900)),
+              const SizedBox(height: 5),
+              Text(text,
+                  textAlign: center ? TextAlign.center : null,
+                  style: TextStyle(
+                      color: UGold.ink,
+                      height: center ? 1.9 : 1.6,
+                      fontSize: center ? 17 : 13)),
+            ]),
       );
-}
-
-// ═══════════════════════ عدّاد المحاكاة ═══════════════════════
-class CounterCard extends StatelessWidget {
-  final String type;
-  const CounterCard({super.key, required this.type});
-
-  String _hint(bool isT, int n) {
-    if (isT) {
-      if (n >= 7) return 'أتممت 7 أشواط 🎉 الآن صلِّ ركعتي الطواف';
-      if (n < 3) {
-        return 'الشوط ${n + 1}: للرجال رمل واضطباع، وللنساء مشي بسكينة';
-      }
-      return 'الشوط ${n + 1}: امشِ بهدوء وادعُ بما تحب';
-    }
-    if (n >= 7) return 'أتممت 7 أشواط 🎉 الآن احلق أو قصّر';
-    final from = n.isEven ? 'الصفا' : 'المروة';
-    final to = n.isEven ? 'المروة' : 'الصفا';
-    return 'الشوط ${n + 1}: من $from إلى $to';
-  }
-
-  @override
-  Widget build(BuildContext c) {
-    final st = AppScope.of(c);
-    final isT = type == 'tawaf';
-    final int n = isT ? st.tawaf : st.sai;
-
-    return UCard(
-      child: Column(
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.touch_app_rounded,
-                  color: Color(0xFF7A5B12), size: 20),
-              const SizedBox(width: 6),
-              Text(isT ? 'محاكاة الطواف' : 'محاكاة السعي',
-                  style: const TextStyle(
-                      color: Color(0xFF7A5B12), fontWeight: FontWeight.w800)),
-            ],
-          ),
-          SizedBox(
-            height: 210,
-            width: double.infinity,
-            child: CustomPaint(
-              painter: isT ? TawafPainter(n) : SaiPainter(n),
-            ),
-          ),
-          Text('$n / 7',
-              style: const TextStyle(
-                  fontSize: 48,
-                  fontWeight: FontWeight.w900,
-                  color: AppColors.gold)),
-          const SizedBox(height: 6),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              for (int k = 0; k < 7; k++)
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 250),
-                  margin: const EdgeInsets.symmetric(horizontal: 3),
-                  width: 10,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: k < n ? AppColors.gold : UC.border,
-                  ),
-                ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(_hint(isT, n),
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: UC.ink, height: 1.5)),
-          const SizedBox(height: 12),
-          PrimaryButton(
-            isT ? 'أتممت شوطًا' : 'وصلت الطرف الآخر',
-            onTap: n >= 7
-                ? null
-                : () {
-                    HapticFeedback.mediumImpact();
-                    st.change(() {
-                      if (isT) {
-                        st.tawaf++;
-                      } else {
-                        st.sai++;
-                      }
-                    });
-                  },
-          ),
-          const SizedBox(height: 4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              TextButton.icon(
-                onPressed: n == 0
-                    ? null
-                    : () => st.change(() {
-                          if (isT) {
-                            st.tawaf--;
-                          } else {
-                            st.sai--;
-                          }
-                        }),
-                icon: const Icon(Icons.undo_rounded, size: 18),
-                label: const Text('تراجع'),
-                style:
-                    TextButton.styleFrom(foregroundColor: AppColors.greenDark),
-              ),
-              const SizedBox(width: 8),
-              TextButton.icon(
-                onPressed: () => st.change(() {
-                  if (isT) {
-                    st.tawaf = 0;
-                  } else {
-                    st.sai = 0;
-                  }
-                }),
-                icon: const Icon(Icons.restart_alt_rounded, size: 18),
-                label: const Text('إعادة العدّاد'),
-                style: TextButton.styleFrom(foregroundColor: UC.muted),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-void _paintLabel(Canvas c, String t, Offset center,
-    {double size = 11,
-    Color color = UC.muted,
-    FontWeight w = FontWeight.w700}) {
-  final tp = TextPainter(
-    text: TextSpan(
-        text: t, style: TextStyle(fontSize: size, color: color, fontWeight: w)),
-    textDirection: TextDirection.rtl,
-  )..layout();
-  tp.paint(c, center - Offset(tp.width / 2, tp.height / 2));
-}
-
-class TawafPainter extends CustomPainter {
-  final int n;
-  TawafPainter(this.n);
-
-  @override
-  void paint(Canvas c, Size s) {
-    final center = Offset(s.width / 2, s.height / 2 + 6);
-    const radius = 70.0;
-    final frac = n.clamp(0, 7) / 7;
-
-    // المسار
-    final track = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 12
-      ..color = UC.border;
-    c.drawCircle(center, radius, track);
-
-    // التقدم (الطواف عكس عقارب الساعة والكعبة عن اليسار)
-    if (frac > 0) {
-      final p = Paint()
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round
-        ..strokeWidth = 12
-        ..color = AppColors.gold;
-      c.drawArc(Rect.fromCircle(center: center, radius: radius), -math.pi / 2,
-          -2 * math.pi * frac, false, p);
-    }
-
-    // الكعبة
-    final kaaba = RRect.fromRectAndRadius(
-        Rect.fromCenter(center: center, width: 44, height: 44),
-        const Radius.circular(3));
-    c.drawRRect(kaaba, Paint()..color = const Color(0xFF111111));
-    c.drawRect(
-        Rect.fromCenter(center: center.translate(0, -8), width: 44, height: 5),
-        Paint()..color = AppColors.gold);
-
-    // خط البداية: الحجر الأسود
-    final start = Offset(center.dx, center.dy - radius);
-    c.drawLine(
-        start.translate(0, -12),
-        start.translate(0, 12),
-        Paint()
-          ..color = const Color(0xFF2E9D6F)
-          ..strokeWidth = 3);
-    _paintLabel(c, 'الحجر الأسود', start.translate(0, -22), size: 11);
-
-    // الطائف
-    final ang = -math.pi / 2 - 2 * math.pi * frac;
-    final pos = Offset(
-        center.dx + radius * math.cos(ang), center.dy + radius * math.sin(ang));
-    c.drawCircle(pos, 11, Paint()..color = Colors.white);
-    c.drawCircle(pos, 8, Paint()..color = AppColors.green);
-
-    _paintLabel(c, 'الكعبة', center.translate(0, 38), size: 11);
-  }
-
-  @override
-  bool shouldRepaint(covariant TawafPainter old) => old.n != n;
-}
-
-class SaiPainter extends CustomPainter {
-  final int n;
-  SaiPainter(this.n);
-
-  @override
-  void paint(Canvas c, Size s) {
-    final y = s.height / 2 + 6;
-    const pad = 34.0;
-
-    // الطريق
-    c.drawRRect(
-        RRect.fromRectAndRadius(
-            Rect.fromLTWH(pad, y - 6, s.width - pad * 2, 12),
-            const Radius.circular(6)),
-        Paint()..color = UC.border);
-
-    // منطقة الهرولة بين العلمين الأخضرين
-    final zone = Rect.fromLTWH(s.width * .38, y - 6, s.width * .24, 12);
-    c.drawRect(zone, Paint()..color = const Color(0xFF2E9D6F));
-    final post = Paint()
-      ..color = const Color(0xFF2E9D6F)
-      ..strokeWidth = 3;
-    c.drawLine(Offset(zone.left, y - 18), Offset(zone.left, y + 18), post);
-    c.drawLine(Offset(zone.right, y - 18), Offset(zone.right, y + 18), post);
-    _paintLabel(c, 'العلمان الأخضران', Offset(s.width / 2, y + 32), size: 10.5);
-
-    // الصفا والمروة
-    for (final x in [pad, s.width - pad]) {
-      final tri = Path()
-        ..moveTo(x - 16, y - 8)
-        ..lineTo(x, y - 34)
-        ..lineTo(x + 16, y - 8)
-        ..close();
-      c.drawPath(tri, Paint()..color = const Color(0xFF8A7A5A));
-    }
-    _paintLabel(c, 'الصفا', Offset(pad, y - 48), size: 12, color: UC.ink);
-    _paintLabel(c, 'المروة', Offset(s.width - pad, y - 48),
-        size: 12, color: UC.ink);
-
-    // الساعي
-    final x = n.isEven ? pad : s.width - pad;
-    final pos = Offset(x, y);
-    c.drawCircle(pos, 13, Paint()..color = Colors.white);
-    c.drawCircle(pos, 10, Paint()..color = AppColors.green);
-  }
-
-  @override
-  bool shouldRepaint(covariant SaiPainter old) => old.n != n;
-}
-
-// ═══════════════════════ الصوت و 3D ═══════════════════════
-class _VoiceBar extends StatelessWidget {
-  final bool touring;
-  final VoidCallback onExplain, onDua, onTour, onStop;
-  const _VoiceBar({
-    required this.touring,
-    required this.onExplain,
-    required this.onDua,
-    required this.onTour,
-    required this.onStop,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return ValueListenableBuilder<bool>(
-      valueListenable: UVoice.I.speaking,
-      builder: (context, sp, _) => Container(
-        padding: const EdgeInsets.all(10),
-        decoration: BoxDecoration(
-          color: AppColors.softGreen,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                _VBtn(
-                  icon: sp ? Icons.stop_rounded : Icons.play_arrow_rounded,
-                  label: sp ? 'إيقاف' : 'اسمع الشرح',
-                  on: sp ? onStop : onExplain,
-                  filled: true,
-                ),
-                const SizedBox(width: 8),
-                _VBtn(
-                    icon: Icons.front_hand_rounded, label: 'الدعاء', on: onDua),
-                const SizedBox(width: 8),
-                _VBtn(
-                  icon: touring
-                      ? Icons.stop_circle_rounded
-                      : Icons.headphones_rounded,
-                  label: touring ? 'إنهاء الجولة' : 'جولة صوتية',
-                  on: touring ? onStop : onTour,
-                ),
-              ],
-            ),
-            ValueListenableBuilder<bool>(
-              valueListenable: UVoice.I.arabicMissing,
-              builder: (context, miss, _) => miss
-                  ? const Padding(
-                      padding: EdgeInsets.only(top: 8),
-                      child: Text(
-                          'لم نجد صوتًا عربيًا في جهازك. ثبّت "Google Text-to-speech" وحمّل الصوت العربي من إعدادات الجهاز.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                              color: UC.muted, fontSize: 11.5, height: 1.5)),
-                    )
-                  : const SizedBox.shrink(),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _VBtn extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback on;
-  final bool filled;
-  const _VBtn(
-      {required this.icon,
-      required this.label,
-      required this.on,
-      this.filled = false});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: on,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            gradient: filled
-                ? const LinearGradient(
-                    colors: [AppColors.green, AppColors.greenDark])
-                : null,
-            color: filled ? null : Colors.white,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Column(
-            children: [
-              Icon(icon,
-                  size: 22, color: filled ? Colors.white : AppColors.greenDark),
-              const SizedBox(height: 2),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Text(label,
-                    style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w800,
-                        color: filled ? Colors.white : UC.ink)),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _Open3D extends StatelessWidget {
-  final String label;
-  final Widget page;
-  const _Open3D({required this.label, required this.page});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () =>
-          Navigator.push(context, MaterialPageRoute(builder: (_) => page)),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(22),
-          gradient: const LinearGradient(
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
-            colors: [AppColors.green, Color(0xFF083D2D)],
-          ),
-          border: Border.all(color: AppColors.gold, width: 1.4),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.greenDark.withOpacity(.3),
-              blurRadius: 16,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.view_in_ar_rounded,
-                color: AppColors.gold, size: 30),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(label,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800)),
-            ),
-            const Icon(Icons.arrow_back_ios_new_rounded,
-                color: Colors.white, size: 16),
-          ],
-        ),
-      ),
-    );
-  }
 }

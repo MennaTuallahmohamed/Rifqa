@@ -1,135 +1,66 @@
 import 'package:flutter/material.dart';
-
 import '../../../models/dua_model.dart';
+import '../dua_premium_theme.dart';
 
 class DuaShareCard extends StatelessWidget {
-  const DuaShareCard({
-    super.key,
-    required this.dua,
-    this.showSource = true,
-  });
-
+  const DuaShareCard({super.key, required this.dua, this.showSource = true});
   final Dua dua;
   final bool showSource;
-
   @override
-  Widget build(BuildContext context) {
-    final colors = Theme.of(context).colorScheme;
-
-    return AspectRatio(
-      aspectRatio: 4 / 5,
-      child: Container(
-        padding: const EdgeInsets.all(26),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
-            colors: [
-              colors.primaryContainer,
-              colors.surface,
-              colors.secondaryContainer,
-            ],
-          ),
-          borderRadius: BorderRadius.circular(30),
-          border: Border.all(
-            color: colors.outlineVariant,
-          ),
-        ),
-        child: Column(
-          children: [
-            Row(
-              children: [
+  Widget build(BuildContext context) => AspectRatio(
+        aspectRatio: 4 / 5,
+        child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+                color: DuaPremium.cream,
+                borderRadius: BorderRadius.circular(27),
+                border: Border.all(color: DuaPremium.gold, width: 1.3)),
+            child: Column(children: [
+              Row(children: [
                 Container(
-                  width: 46,
-                  height: 46,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: colors.primary,
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  child: Text(
-                    dua.category.emoji,
-                    style: const TextStyle(fontSize: 22),
-                  ),
-                ),
-                const SizedBox(width: 12),
+                    padding: const EdgeInsets.all(9),
+                    decoration: BoxDecoration(
+                        color: DuaPremium.deep,
+                        borderRadius: BorderRadius.circular(14)),
+                    child: const Icon(Icons.auto_stories_rounded,
+                        color: DuaPremium.gold, size: 22)),
+                const SizedBox(width: 9),
                 Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'رِفقة',
-                        style: TextStyle(
-                          fontSize: 19,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      Text(
-                        'رفيقك في الرحلة',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ],
-                  ),
-                ),
-                const Icon(Icons.favorite_outline_rounded),
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                      Text('رِفقة',
+                          style: DuaPremium.type(18, weight: FontWeight.w900)),
+                      Text('رفيقك في الرحلة',
+                          style: DuaPremium.type(10, color: DuaPremium.muted)),
+                    ])),
+                const Icon(Icons.favorite_border_rounded,
+                    color: DuaPremium.green),
+              ]),
+              const Spacer(),
+              Text(dua.title,
+                  textAlign: TextAlign.center,
+                  style: DuaPremium.type(17, weight: FontWeight.w900)),
+              const SizedBox(height: 13),
+              Flexible(
+                  child: SingleChildScrollView(
+                      child: SelectableText(dua.arabicText,
+                          textAlign: TextAlign.center,
+                          style: DuaPremium.type(21,
+                              height: 2, weight: FontWeight.w700)))),
+              const Spacer(),
+              if (showSource && dua.reference.isNotEmpty) ...[
+                const Divider(color: DuaPremium.line),
+                Text(dua.reference,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                    style: DuaPremium.type(9.5, color: DuaPremium.muted)),
               ],
-            ),
-            const Spacer(),
-            Text(
-              dua.title,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              dua.arabicText,
-              textAlign: TextAlign.center,
-              maxLines: 8,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 22,
-                height: 2,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-            const Spacer(),
-            if (showSource && dua.reference.trim().isNotEmpty) ...[
-              const Divider(),
-              const SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  if (dua.sourceType.isDocumented) ...[
-                    Icon(
-                      Icons.verified_rounded,
-                      size: 17,
-                      color: colors.primary,
-                    ),
-                    const SizedBox(width: 5),
-                  ],
-                  Flexible(
-                    child: Text(
-                      dua.reference,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-            const SizedBox(height: 12),
-            Text(
-              '${dua.category.emoji} ${dua.category.label}',
-              style: TextStyle(
-                color: colors.primary,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+              const SizedBox(height: 6),
+              Text('${dua.category.emoji} ${dua.category.label}',
+                  style: DuaPremium.type(11,
+                      weight: FontWeight.w900, color: DuaPremium.green)),
+            ])),
+      );
 }

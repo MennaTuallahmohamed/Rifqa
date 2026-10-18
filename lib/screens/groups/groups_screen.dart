@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../core/theme/app_colors.dart';
 import '../../services/groups/group_service.dart';
 import 'chat_media.dart';
+import 'rifqa_chat_theme.dart';
 import 'friends_screen.dart';
 import 'group_map_screen.dart';
 import 'group_members_screen.dart';
@@ -65,7 +66,8 @@ Color inkOf(BuildContext c) => isDark(c) ? Colors.white : AppColors.ink;
 Color mutedOf(BuildContext c) => isDark(c) ? Colors.white60 : AppColors.muted;
 Color softOf(BuildContext c, Color base, Color light) =>
     isDark(c) ? base.withValues(alpha: .18) : light;
-Color scaffoldOf(BuildContext c) => isDark(c) ? const Color(0xFF0F1512) : const Color(0xFFF7F8FA);
+Color scaffoldOf(BuildContext c) =>
+    isDark(c) ? const Color(0xFF0F1512) : RifqaChat.ivory;
 
 Future<void> openInMaps(Object lat, Object lng) => launchUrl(
       Uri.parse('https://www.google.com/maps/search/?api=1&query=$lat,$lng'),
@@ -117,7 +119,11 @@ class FadeSlideIn extends StatelessWidget {
   final int index;
   final Widget child;
   final Duration base;
-  const FadeSlideIn({super.key, required this.index, required this.child, this.base = const Duration(milliseconds: 260)});
+  const FadeSlideIn(
+      {super.key,
+      required this.index,
+      required this.child,
+      this.base = const Duration(milliseconds: 260)});
 
   @override
   Widget build(BuildContext context) {
@@ -127,7 +133,8 @@ class FadeSlideIn extends StatelessWidget {
       curve: Curves.easeOutCubic,
       builder: (context, v, child) => Opacity(
         opacity: v,
-        child: Transform.translate(offset: Offset(0, (1 - v) * 14), child: child),
+        child:
+            Transform.translate(offset: Offset(0, (1 - v) * 14), child: child),
       ),
       child: child,
     );
@@ -142,8 +149,11 @@ class PulseDot extends StatefulWidget {
   State<PulseDot> createState() => _PulseDotState();
 }
 
-class _PulseDotState extends State<PulseDot> with SingleTickerProviderStateMixin {
-  late final c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1100))..repeat(reverse: true);
+class _PulseDotState extends State<PulseDot>
+    with SingleTickerProviderStateMixin {
+  late final c = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 1100))
+    ..repeat(reverse: true);
   @override
   void dispose() {
     c.dispose();
@@ -182,8 +192,11 @@ class TypingDots extends StatefulWidget {
   State<TypingDots> createState() => _TypingDotsState();
 }
 
-class _TypingDotsState extends State<TypingDots> with SingleTickerProviderStateMixin {
-  late final c = AnimationController(vsync: this, duration: const Duration(milliseconds: 900))..repeat();
+class _TypingDotsState extends State<TypingDots>
+    with SingleTickerProviderStateMixin {
+  late final c = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 900))
+    ..repeat();
   @override
   void dispose() {
     c.dispose();
@@ -207,7 +220,9 @@ class _TypingDotsState extends State<TypingDots> with SingleTickerProviderStateM
               child: Container(
                 width: 6,
                 height: 6,
-                decoration: BoxDecoration(shape: BoxShape.circle, color: widget.color.withValues(alpha: .8)),
+                decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: widget.color.withValues(alpha: .8)),
               ),
             );
           }),
@@ -223,7 +238,12 @@ class StateView extends StatelessWidget {
   final String title;
   final String? message;
   final Widget? action;
-  const StateView({super.key, required this.icon, required this.title, this.message, this.action});
+  const StateView(
+      {super.key,
+      required this.icon,
+      required this.title,
+      this.message,
+      this.action});
 
   @override
   Widget build(BuildContext context) => Center(
@@ -237,7 +257,8 @@ class StateView extends StatelessWidget {
                 gradient: LinearGradient(
                   colors: [
                     softOf(context, AppColors.green, AppColors.softGreen),
-                    softOf(context, AppColors.green, AppColors.softGreen).withValues(alpha: .6),
+                    softOf(context, AppColors.green, AppColors.softGreen)
+                        .withValues(alpha: .6),
                   ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
@@ -249,7 +270,10 @@ class StateView extends StatelessWidget {
             const SizedBox(height: 20),
             Text(title,
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800, color: inkOf(context))),
+                style: TextStyle(
+                    fontSize: 19,
+                    fontWeight: FontWeight.w800,
+                    color: inkOf(context))),
             if (message != null) ...[
               const SizedBox(height: 8),
               Text(message!,
@@ -267,14 +291,21 @@ class Pill extends StatelessWidget {
   final Color color;
   final Color bg;
   final IconData? icon;
-  const Pill(this.text, {super.key, required this.color, required this.bg, this.icon});
+  const Pill(this.text,
+      {super.key, required this.color, required this.bg, this.icon});
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
+        decoration:
+            BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
-          if (icon != null) ...[Icon(icon, size: 13, color: color), const SizedBox(width: 4)],
-          Text(text, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: color)),
+          if (icon != null) ...[
+            Icon(icon, size: 13, color: color),
+            const SizedBox(width: 4)
+          ],
+          Text(text,
+              style: TextStyle(
+                  fontSize: 12, fontWeight: FontWeight.w700, color: color)),
         ]),
       );
 }
@@ -284,7 +315,8 @@ class Pill extends StatelessWidget {
 class CountBubble extends StatelessWidget {
   final int count;
   final Color color;
-  const CountBubble({super.key, required this.count, this.color = AppColors.green});
+  const CountBubble(
+      {super.key, required this.count, this.color = AppColors.green});
   @override
   Widget build(BuildContext context) {
     if (count <= 0) return const SizedBox.shrink();
@@ -296,10 +328,16 @@ class CountBubble extends StatelessWidget {
       decoration: BoxDecoration(
         color: color,
         borderRadius: BorderRadius.circular(10),
-        boxShadow: [BoxShadow(color: color.withValues(alpha: .4), blurRadius: 6, offset: const Offset(0, 2))],
+        boxShadow: [
+          BoxShadow(
+              color: color.withValues(alpha: .4),
+              blurRadius: 6,
+              offset: const Offset(0, 2))
+        ],
       ),
       child: Text(count > 99 ? '99+' : '$count',
-          style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
+          style: const TextStyle(
+              color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
     );
   }
 }
@@ -308,7 +346,10 @@ class CountBubble extends StatelessWidget {
 class DottedTicket extends StatelessWidget {
   final String code;
   final List<Color> colors;
-  const DottedTicket({super.key, required this.code, this.colors = const [AppColors.gold, Color(0xFF9A7A2E)]});
+  const DottedTicket(
+      {super.key,
+      required this.code,
+      this.colors = const [AppColors.gold, Color(0xFF9A7A2E)]});
 
   @override
   Widget build(BuildContext context) {
@@ -316,19 +357,31 @@ class DottedTicket extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 22, horizontal: 10),
       decoration: BoxDecoration(
-        gradient: LinearGradient(colors: colors, begin: Alignment.topRight, end: Alignment.bottomLeft),
+        gradient: LinearGradient(
+            colors: colors,
+            begin: Alignment.topRight,
+            end: Alignment.bottomLeft),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: colors.first.withValues(alpha: .3), blurRadius: 14, offset: const Offset(0, 6))],
+        boxShadow: [
+          BoxShadow(
+              color: colors.first.withValues(alpha: .3),
+              blurRadius: 14,
+              offset: const Offset(0, 6))
+        ],
       ),
       child: Column(children: [
         SelectableText(code,
             textAlign: TextAlign.center,
             style: const TextStyle(
-                color: Colors.white, fontSize: 30, letterSpacing: 7, fontWeight: FontWeight.w900)),
+                color: Colors.white,
+                fontSize: 30,
+                letterSpacing: 7,
+                fontWeight: FontWeight.w900)),
         const SizedBox(height: 12),
         CustomPaint(
           size: const Size(double.infinity, 1),
-          painter: _DashedLinePainter(color: Colors.white.withValues(alpha: .45)),
+          painter:
+              _DashedLinePainter(color: Colors.white.withValues(alpha: .45)),
         ),
       ]),
     );
@@ -353,7 +406,8 @@ class _DashedLinePainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant _DashedLinePainter oldDelegate) => oldDelegate.color != color;
+  bool shouldRepaint(covariant _DashedLinePainter oldDelegate) =>
+      oldDelegate.color != color;
 }
 
 class GroupAvatar extends StatelessWidget {
@@ -374,7 +428,8 @@ class GroupAvatar extends StatelessWidget {
   Widget build(BuildContext context) {
     final t = name.trim();
     final letter = t.isEmpty ? '؟' : String.fromCharCode(t.runes.first);
-    final color = _palette[t.runes.fold<int>(0, (a, b) => a + b) % _palette.length];
+    final color =
+        _palette[t.runes.fold<int>(0, (a, b) => a + b) % _palette.length];
     final avatar = Container(
       width: size,
       height: size,
@@ -386,22 +441,30 @@ class GroupAvatar extends StatelessWidget {
             end: Alignment.bottomLeft),
         borderRadius: BorderRadius.circular(size * .32),
         boxShadow: [
-          BoxShadow(color: color.withValues(alpha: .35), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+              color: color.withValues(alpha: .35),
+              blurRadius: 10,
+              offset: const Offset(0, 4)),
         ],
       ),
       child: Text(letter,
-          style: TextStyle(color: Colors.white, fontSize: size * .45, fontWeight: FontWeight.w800)),
+          style: TextStyle(
+              color: Colors.white,
+              fontSize: size * .45,
+              fontWeight: FontWeight.w800)),
     );
     if (!ring) return avatar;
     return Container(
       padding: const EdgeInsets.all(2.4),
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        gradient: const LinearGradient(colors: [AppColors.gold, AppColors.green]),
+        gradient:
+            const LinearGradient(colors: [AppColors.gold, AppColors.green]),
       ),
       child: Container(
         padding: const EdgeInsets.all(2),
-        decoration: BoxDecoration(shape: BoxShape.circle, color: scaffoldOf(context)),
+        decoration:
+            BoxDecoration(shape: BoxShape.circle, color: scaffoldOf(context)),
         child: avatar,
       ),
     );
@@ -434,7 +497,8 @@ class InputSheet extends StatefulWidget {
 }
 
 class _InputSheetState extends State<InputSheet> {
-  late final controller = TextEditingController(text: widget.initialValue ?? '');
+  late final controller =
+      TextEditingController(text: widget.initialValue ?? '');
   @override
   void dispose() {
     controller.dispose();
@@ -444,70 +508,102 @@ class _InputSheetState extends State<InputSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(20, 4, 20, 20 + MediaQuery.of(context).viewInsets.bottom),
-      child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-                gradient: const LinearGradient(colors: [AppColors.green, AppColors.greenDark]),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [BoxShadow(color: AppColors.green.withValues(alpha: .35), blurRadius: 10, offset: const Offset(0, 4))]),
-            child: Icon(widget.icon, color: Colors.white),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-              child: Text(widget.title,
-                  style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800))),
-        ]),
-        const SizedBox(height: 10),
-        Text(widget.subtitle, style: TextStyle(height: 1.6, color: mutedOf(context))),
-        const SizedBox(height: 16),
-        TextField(
-          controller: controller,
-          autofocus: true,
-          maxLength: widget.maxLength,
-          textCapitalization:
-              widget.isCode ? TextCapitalization.characters : TextCapitalization.sentences,
-          textAlign: widget.isCode ? TextAlign.center : TextAlign.start,
-          style: widget.isCode
-              ? const TextStyle(fontSize: 22, letterSpacing: 4, fontWeight: FontWeight.w800)
-              : null,
-          decoration: InputDecoration(
-            hintText: widget.hint,
-            counterText: '',
-            filled: true,
-            fillColor: scaffoldOf(context),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
-            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: lineOf(context))),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: const BorderSide(color: AppColors.green, width: 1.6)),
-          ),
-          onSubmitted: (v) => Navigator.pop(context, v),
-        ),
-        const SizedBox(height: 14),
-        SizedBox(
-          width: double.infinity,
-          height: 54,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(16),
-              gradient: const LinearGradient(colors: [AppColors.green, AppColors.greenDark]),
-              boxShadow: [BoxShadow(color: AppColors.green.withValues(alpha: .35), blurRadius: 12, offset: const Offset(0, 5))],
+      padding: EdgeInsets.fromLTRB(
+          20, 4, 20, 20 + MediaQuery.of(context).viewInsets.bottom),
+      child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                        colors: [AppColors.green, AppColors.greenDark]),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(
+                          color: AppColors.green.withValues(alpha: .35),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4))
+                    ]),
+                child: Icon(widget.icon, color: Colors.white),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                  child: Text(widget.title,
+                      style: const TextStyle(
+                          fontSize: 19, fontWeight: FontWeight.w800))),
+            ]),
+            const SizedBox(height: 10),
+            Text(widget.subtitle,
+                style: TextStyle(height: 1.6, color: mutedOf(context))),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              autofocus: true,
+              maxLength: widget.maxLength,
+              textCapitalization: widget.isCode
+                  ? TextCapitalization.characters
+                  : TextCapitalization.sentences,
+              textAlign: widget.isCode ? TextAlign.center : TextAlign.start,
+              style: widget.isCode
+                  ? const TextStyle(
+                      fontSize: 22,
+                      letterSpacing: 4,
+                      fontWeight: FontWeight.w800)
+                  : null,
+              decoration: InputDecoration(
+                hintText: widget.hint,
+                counterText: '',
+                filled: true,
+                fillColor: scaffoldOf(context),
+                border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide.none),
+                enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide: BorderSide(color: lineOf(context))),
+                focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(16),
+                    borderSide:
+                        const BorderSide(color: AppColors.green, width: 1.6)),
+              ),
+              onSubmitted: (v) => Navigator.pop(context, v),
             ),
-            child: Material(
-              color: Colors.transparent,
-              child: InkWell(
-                borderRadius: BorderRadius.circular(16),
-                onTap: () => Navigator.pop(context, controller.text),
-                child: Center(
-                  child: Text(widget.action,
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700, color: Colors.white)),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  gradient: const LinearGradient(
+                      colors: [AppColors.green, AppColors.greenDark]),
+                  boxShadow: [
+                    BoxShadow(
+                        color: AppColors.green.withValues(alpha: .35),
+                        blurRadius: 12,
+                        offset: const Offset(0, 5))
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: () => Navigator.pop(context, controller.text),
+                    child: Center(
+                      child: Text(widget.action,
+                          style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Colors.white)),
+                    ),
+                  ),
                 ),
               ),
             ),
-          ),
-        ),
-      ]),
+          ]),
     );
   }
 }
@@ -523,7 +619,8 @@ class GroupsScreen extends StatefulWidget {
 
 enum _GroupFilter { all, admin }
 
-class _GroupsScreenState extends State<GroupsScreen> with BusyMixin<GroupsScreen> {
+class _GroupsScreenState extends State<GroupsScreen>
+    with BusyMixin<GroupsScreen> {
   final service = GroupService.instance;
   final _search = TextEditingController();
   String _query = '';
@@ -562,7 +659,8 @@ class _GroupsScreenState extends State<GroupsScreen> with BusyMixin<GroupsScreen
   Future<void> createGroup() => run(() async {
         final name = await askSheet(
           title: 'مجموعة جديدة',
-          subtitle: 'اختر اسمًا يعرفه أفراد الفوج أو العائلة. ستكون مشرف المجموعة.',
+          subtitle:
+              'اختر اسمًا يعرفه أفراد الفوج أو العائلة. ستكون مشرف المجموعة.',
           hint: 'مثال: فوج عمرة رمضان',
           action: 'إنشاء المجموعة',
           icon: Icons.group_add_outlined,
@@ -575,7 +673,8 @@ class _GroupsScreenState extends State<GroupsScreen> with BusyMixin<GroupsScreen
   Future<void> joinGroup() => run(() async {
         final code = await askSheet(
           title: 'الانضمام بكود دعوة',
-          subtitle: 'اطلب الكود من مشرف المجموعة. بعد الإرسال ينتظر طلبك موافقته.',
+          subtitle:
+              'اطلب الكود من مشرف المجموعة. بعد الإرسال ينتظر طلبك موافقته.',
           hint: 'كود الدعوة',
           action: 'إرسال الطلب',
           icon: Icons.key_outlined,
@@ -599,9 +698,11 @@ class _GroupsScreenState extends State<GroupsScreen> with BusyMixin<GroupsScreen
               decoration: BoxDecoration(
                   color: softOf(ctx, AppColors.green, AppColors.softGreen),
                   borderRadius: BorderRadius.circular(14)),
-              child: const Icon(Icons.group_add_outlined, color: AppColors.green),
+              child:
+                  const Icon(Icons.group_add_outlined, color: AppColors.green),
             ),
-            title: const Text('إنشاء مجموعة', style: TextStyle(fontWeight: FontWeight.w700)),
+            title: const Text('إنشاء مجموعة',
+                style: TextStyle(fontWeight: FontWeight.w700)),
             subtitle: const Text('لفوجك أو عائلتك، وتكون مشرفها'),
             onTap: () {
               Navigator.pop(ctx);
@@ -616,7 +717,8 @@ class _GroupsScreenState extends State<GroupsScreen> with BusyMixin<GroupsScreen
                   borderRadius: BorderRadius.circular(14)),
               child: const Icon(Icons.key_outlined, color: Color(0xFF8A6B1E)),
             ),
-            title: const Text('الانضمام بكود دعوة', style: TextStyle(fontWeight: FontWeight.w700)),
+            title: const Text('الانضمام بكود دعوة',
+                style: TextStyle(fontWeight: FontWeight.w700)),
             subtitle: const Text('اطلبيه من مشرف المجموعة'),
             onTap: () {
               Navigator.pop(ctx);
@@ -629,65 +731,136 @@ class _GroupsScreenState extends State<GroupsScreen> with BusyMixin<GroupsScreen
     );
   }
 
-  Widget _topBar() => Padding(
-        padding: EdgeInsets.fromLTRB(18, MediaQuery.paddingOf(context).top + 14, 18, 6),
-        child: Row(children: [
-          Text('رسائلي',
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: inkOf(context))),
-          const Spacer(),
-          const FriendsEntryButton(),
-          const SizedBox(width: 8),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: const LinearGradient(colors: [AppColors.green, AppColors.greenDark]),
-              boxShadow: [BoxShadow(color: AppColors.green.withValues(alpha: .35), blurRadius: 10, offset: const Offset(0, 4))],
-            ),
-            child: Material(
-              color: Colors.transparent,
-              shape: const CircleBorder(),
-              child: InkWell(
-                customBorder: const CircleBorder(),
-                onTap: _openComposeMenu,
-                child: const Padding(
-                  padding: EdgeInsets.all(11),
-                  child: Icon(Icons.edit_outlined, color: Colors.white, size: 20),
-                ),
-              ),
-            ),
-          ),
+  Widget _topBar() => Container(
+        height: 153 + MediaQuery.paddingOf(context).top,
+        clipBehavior: Clip.antiAlias,
+        decoration: const BoxDecoration(color: RifqaChat.deep),
+        child: Stack(fit: StackFit.expand, children: [
+          Image.asset('assets/images/rifqa_group_cover.jpg',
+              fit: BoxFit.cover,
+              alignment: Alignment.centerLeft,
+              errorBuilder: (_, __, ___) =>
+                  const ColoredBox(color: RifqaChat.deep)),
+          const DecoratedBox(
+              decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                      begin: Alignment.centerRight,
+                      end: Alignment.centerLeft,
+                      colors: [
+                Color(0xFA053B31),
+                Color(0xEF053B31),
+                Color(0x44053B31)
+              ],
+                      stops: [
+                0,
+                .57,
+                1
+              ]))),
+          Padding(
+              padding: EdgeInsets.fromLTRB(
+                  17, MediaQuery.paddingOf(context).top + 12, 17, 9),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      const Expanded(
+                          child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                            Text('المحادثات',
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 26,
+                                    fontWeight: FontWeight.w900)),
+                            Text('خليك قريب من رفاق رحلتك',
+                                style: TextStyle(
+                                    color: Color(0xFFEBDAB7), fontSize: 12)),
+                          ])),
+                      IconButton(
+                          onPressed: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => const FriendsScreen())),
+                          icon: const Icon(Icons.person_add_alt_1_rounded,
+                              color: RifqaChat.gold),
+                          tooltip: 'الأصدقاء'),
+                      IconButton(
+                          onPressed: _openComposeMenu,
+                          icon: const Icon(Icons.add_circle_rounded,
+                              color: RifqaChat.gold, size: 28),
+                          tooltip: 'مجموعة جديدة'),
+                    ]),
+                    const Spacer(),
+                    Container(
+                      height: 44,
+                      decoration: BoxDecoration(
+                          color: const Color(0xEFFFFCF7),
+                          borderRadius: BorderRadius.circular(17)),
+                      child: TextField(
+                          controller: _search,
+                          textAlignVertical: TextAlignVertical.center,
+                          onChanged: (v) => setState(() => _query = v.trim()),
+                          decoration: InputDecoration(
+                              hintText: 'ابحثي في مجموعاتك...',
+                              hintStyle: const TextStyle(
+                                  fontSize: 13, color: RifqaChat.muted),
+                              prefixIcon: const Icon(Icons.search_rounded,
+                                  color: RifqaChat.deep),
+                              suffixIcon: _query.isEmpty
+                                  ? null
+                                  : IconButton(
+                                      icon: const Icon(Icons.close_rounded),
+                                      onPressed: () {
+                                        _search.clear();
+                                        setState(() => _query = '');
+                                      }),
+                              border: InputBorder.none,
+                              isDense: true)),
+                    ),
+                  ])),
         ]),
       );
 
-  Widget _searchBar() => Padding(
-        padding: const EdgeInsets.fromLTRB(18, 10, 18, 4),
-        child: Container(
-          decoration: BoxDecoration(
-            color: surfaceOf(context),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: lineOf(context)),
-          ),
-          child: TextField(
-            controller: _search,
-            onChanged: (v) => setState(() => _query = v.trim()),
-            decoration: InputDecoration(
-              hintText: 'بحث في المجموعات...',
-              hintStyle: TextStyle(color: mutedOf(context), fontSize: 14.5),
-              prefixIcon: Icon(Icons.search_rounded, color: mutedOf(context)),
-              suffixIcon: _query.isEmpty
-                  ? null
-                  : IconButton(
-                      icon: Icon(Icons.close_rounded, color: mutedOf(context), size: 19),
-                      onPressed: () {
-                        _search.clear();
-                        setState(() => _query = '');
-                      },
-                    ),
-              border: InputBorder.none,
-              contentPadding: const EdgeInsets.symmetric(vertical: 13),
-            ),
-          ),
-        ),
+  Widget _welcomeBanner() => Padding(
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 5),
+        child: Column(children: [
+          const RifqaCinematicBanner(
+              height: 133,
+              title: 'معًا في رحلة مباركة',
+              subtitle: 'تواصلي مع رفاق رحلتك وشاركي اللحظات الجميلة'),
+          const SizedBox(height: 9),
+          Row(children: [
+            Expanded(
+                child: SizedBox(
+                    height: 43,
+                    child: FilledButton.icon(
+                        onPressed: createGroup,
+                        style: FilledButton.styleFrom(
+                            backgroundColor: RifqaChat.deep,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 5),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14))),
+                        icon: const Icon(Icons.group_add_rounded, size: 17),
+                        label: const Text('إنشاء مجموعة',
+                            style: TextStyle(fontSize: 12))))),
+            const SizedBox(width: 8),
+            Expanded(
+                child: SizedBox(
+                    height: 43,
+                    child: OutlinedButton.icon(
+                        onPressed: joinGroup,
+                        style: OutlinedButton.styleFrom(
+                            foregroundColor: RifqaChat.deep,
+                            padding: const EdgeInsets.symmetric(horizontal: 5),
+                            side: const BorderSide(color: RifqaChat.gold),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14))),
+                        icon: const Icon(Icons.qr_code_rounded, size: 18),
+                        label: const Text('انضمام برمز',
+                            style: TextStyle(fontSize: 12))))),
+          ]),
+        ]),
       );
 
   Widget _quickRow(List<QueryDocumentSnapshot<Map<String, dynamic>>> docs) {
@@ -712,19 +885,25 @@ class _GroupsScreenState extends State<GroupsScreen> with BusyMixin<GroupsScreen
                   builder: (_) => GroupChatScreen(
                     groupId: d.id,
                     groupName: name,
-                    isAdmin: List.from(d.data()['adminIds'] ?? []).contains(FirebaseAuth.instance.currentUser?.uid),
+                    isAdmin: List.from(d.data()['adminIds'] ?? [])
+                        .contains(FirebaseAuth.instance.currentUser?.uid),
                   ),
                 ),
               ),
               child: SizedBox(
                 width: 62,
                 child: Column(children: [
-                  GroupAvatar(name, size: 54, ring: true),
+                  RifqaPhotoAvatar(
+                      size: 54,
+                      variant: name.runes.fold<int>(0, (a, b) => a + b) % 5),
                   const SizedBox(height: 6),
                   Text(name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: inkOf(context))),
+                      style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          color: inkOf(context))),
                 ]),
               ),
             ),
@@ -735,37 +914,47 @@ class _GroupsScreenState extends State<GroupsScreen> with BusyMixin<GroupsScreen
   }
 
   Widget _filterTabs() {
-    Widget chip(String label, _GroupFilter f) {
-      final selected = _filter == f;
-      return Padding(
-        padding: const EdgeInsetsDirectional.only(end: 8),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(20),
-          onTap: () => setState(() => _filter = f),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 180),
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
-            decoration: BoxDecoration(
-              color: selected ? AppColors.green : (isDark(context) ? Colors.white10 : const Color(0xFFF0F3F1)),
+    Widget tab(String label, _GroupFilter target) {
+      final active = _filter == target;
+      return Expanded(
+          child: InkWell(
+              onTap: () => setState(() => _filter = target),
               borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(label,
-                style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: selected ? Colors.white : mutedOf(context))),
-          ),
-        ),
-      );
+              child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  alignment: Alignment.center,
+                  height: 36,
+                  decoration: BoxDecoration(
+                      color: active ? RifqaChat.deep : RifqaChat.cream,
+                      borderRadius: BorderRadius.circular(20)),
+                  child: Text(label,
+                      maxLines: 1,
+                      style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: active ? Colors.white : RifqaChat.deep)))));
     }
 
     return Padding(
-      padding: const EdgeInsets.fromLTRB(18, 10, 18, 4),
-      child: Row(children: [
-        chip('الكل', _GroupFilter.all),
-        chip('أنا مشرف فيها', _GroupFilter.admin),
-      ]),
-    );
+        padding: const EdgeInsets.fromLTRB(14, 9, 14, 8),
+        child: Row(children: [
+          tab('الكل', _GroupFilter.all),
+          const SizedBox(width: 6),
+          tab('أنا مشرف', _GroupFilter.admin),
+          const SizedBox(width: 6),
+          Expanded(
+              child: OutlinedButton.icon(
+                  onPressed: () => Navigator.push(context,
+                      MaterialPageRoute(builder: (_) => const FriendsScreen())),
+                  style: OutlinedButton.styleFrom(
+                      padding: EdgeInsets.zero,
+                      side: const BorderSide(color: RifqaChat.border),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20))),
+                  icon: const Icon(Icons.people_alt_outlined, size: 15),
+                  label:
+                      const Text('الأصدقاء', style: TextStyle(fontSize: 11)))),
+        ]));
   }
 
   @override
@@ -790,20 +979,21 @@ class _GroupsScreenState extends State<GroupsScreen> with BusyMixin<GroupsScreen
               .toList();
           var docs = allDocs;
           if (_filter == _GroupFilter.admin) {
-            docs = docs.where((d) => List.from(d.data()['adminIds'] ?? []).contains(u.uid)).toList();
+            docs = docs
+                .where((d) =>
+                    List.from(d.data()['adminIds'] ?? []).contains(u.uid))
+                .toList();
           }
           if (_query.isNotEmpty) {
             docs = docs
-                .where((d) => (d.data()['name']?.toString() ?? '').toLowerCase().contains(_query.toLowerCase()))
+                .where((d) => (d.data()['name']?.toString() ?? '')
+                    .toLowerCase()
+                    .contains(_query.toLowerCase()))
                 .toList();
           }
           return Column(children: [
             _topBar(),
-            _searchBar(),
-            if (snap.hasData && allDocs.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              _quickRow(allDocs),
-            ],
+            _welcomeBanner(),
             _filterTabs(),
             const PendingJoins(),
             const SizedBox(height: 4),
@@ -817,13 +1007,15 @@ class _GroupsScreenState extends State<GroupsScreen> with BusyMixin<GroupsScreen
                   );
                 }
                 if (!snap.hasData) {
-                  return const Center(child: CircularProgressIndicator(color: AppColors.green));
+                  return const Center(
+                      child: CircularProgressIndicator(color: AppColors.green));
                 }
                 if (allDocs.isEmpty) {
                   return const StateView(
                     icon: Icons.diversity_3_rounded,
                     title: 'لسه مفيش مجموعات',
-                    message: 'ابدأ بإنشاء مجموعة لفوجك أو عائلتك، أو انضم بكود دعوة من المشرف.',
+                    message:
+                        'ابدأ بإنشاء مجموعة لفوجك أو عائلتك، أو انضم بكود دعوة من المشرف.',
                   );
                 }
                 if (docs.isEmpty) {
@@ -834,14 +1026,15 @@ class _GroupsScreenState extends State<GroupsScreen> with BusyMixin<GroupsScreen
                   );
                 }
                 return ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(10, 6, 10, 8),
+                  padding: const EdgeInsets.fromLTRB(10, 6, 10, 18),
                   itemCount: docs.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 2),
                   itemBuilder: (context, i) {
                     final doc = docs[i];
                     final data = doc.data();
                     final name = data['name']?.toString() ?? 'مجموعة';
-                    final isAdmin = List.from(data['adminIds'] ?? []).contains(u.uid);
+                    final isAdmin =
+                        List.from(data['adminIds'] ?? []).contains(u.uid);
                     final members = (data['memberIds'] as List?)?.length ?? 0;
                     return FadeSlideIn(
                       index: i,
@@ -899,13 +1092,16 @@ class _GroupListTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      margin: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
       decoration: BoxDecoration(
-        color: surfaceOf(context),
-        borderRadius: BorderRadius.circular(18),
+        color: RifqaChat.paper,
+        borderRadius: BorderRadius.circular(17),
+        border: Border.all(color: RifqaChat.border),
         boxShadow: [
           BoxShadow(
-            color: isDark(context) ? Colors.black.withValues(alpha: .22) : Colors.black.withValues(alpha: .05),
+            color: isDark(context)
+                ? Colors.black.withValues(alpha: .22)
+                : Colors.black.withValues(alpha: .05),
             blurRadius: 12,
             offset: const Offset(0, 4),
           ),
@@ -918,13 +1114,16 @@ class _GroupListTile extends StatelessWidget {
           onTap: () => Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (_) => GroupChatScreen(groupId: groupId, groupName: name, isAdmin: isAdmin),
+              builder: (_) => GroupChatScreen(
+                  groupId: groupId, groupName: name, isAdmin: isAdmin),
             ),
           ),
           child: Padding(
             padding: const EdgeInsets.all(12),
             child: Row(children: [
-              GroupAvatar(name, size: 52),
+              RifqaPhotoAvatar(
+                  size: 54,
+                  variant: name.runes.fold<int>(0, (a, b) => a + b) % 5),
               const SizedBox(width: 12),
               Expanded(
                 child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
@@ -935,47 +1134,63 @@ class _GroupListTile extends StatelessWidget {
                         .toList();
                     final latest = docs.isNotEmpty ? docs.first.data() : null;
                     final count = docs.length;
-                    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Row(children: [
-                        Expanded(
-                          child: Text(name,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: inkOf(context))),
-                        ),
-                        if (latest != null)
-                          Text(listTimeLabel(latest['createdAt'] as Timestamp?),
-                              style: TextStyle(fontSize: 11.5, color: mutedOf(context))),
-                      ]),
-                      const SizedBox(height: 4),
-                      Row(children: [
-                        Expanded(
-                          child: Text(
-                            latest != null ? _preview(latest) : 'لا توجد رسائل بعد',
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                                fontSize: 13.5,
+                    return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(children: [
+                            Expanded(
+                              child: Text(name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w800,
+                                      color: inkOf(context))),
+                            ),
+                            if (latest != null)
+                              Text(
+                                  listTimeLabel(
+                                      latest['createdAt'] as Timestamp?),
+                                  style: TextStyle(
+                                      fontSize: 11.5, color: mutedOf(context))),
+                          ]),
+                          const SizedBox(height: 4),
+                          Row(children: [
+                            Expanded(
+                              child: Text(
+                                latest != null
+                                    ? _preview(latest)
+                                    : 'لا توجد رسائل بعد',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                    fontSize: 13.5,
+                                    color: mutedOf(context),
+                                    fontWeight: FontWeight.w500),
+                              ),
+                            ),
+                            const SizedBox(width: 6),
+                            if (count > 0)
+                              Text('$count رسالة',
+                                  style: const TextStyle(
+                                      color: RifqaChat.muted, fontSize: 10)),
+                          ]),
+                          const SizedBox(height: 6),
+                          Wrap(spacing: 6, children: [
+                            Pill('$members عضو',
+                                icon: Icons.people_alt_outlined,
                                 color: mutedOf(context),
-                                fontWeight: FontWeight.w500),
-                          ),
-                        ),
-                        const SizedBox(width: 6),
-                        if (count > 0) CountBubble(count: count),
-                      ]),
-                      const SizedBox(height: 6),
-                      Wrap(spacing: 6, children: [
-                        Pill('$members عضو',
-                            icon: Icons.people_alt_outlined,
-                            color: mutedOf(context),
-                            bg: isDark(context) ? Colors.white10 : const Color(0xFFF0F3F1)),
-                        if (isAdmin)
-                          Pill('مشرف',
-                              icon: Icons.shield_outlined,
-                              color: const Color(0xFF8A6B1E),
-                              bg: softOf(context, AppColors.gold, AppColors.softGold)),
-                      ]),
-                    ]);
+                                bg: isDark(context)
+                                    ? Colors.white10
+                                    : RifqaChat.cream),
+                            if (isAdmin)
+                              Pill('مشرف',
+                                  icon: Icons.shield_outlined,
+                                  color: const Color(0xFF8A6B1E),
+                                  bg: softOf(context, AppColors.gold,
+                                      AppColors.softGold)),
+                          ]),
+                        ]);
                   },
                 ),
               ),
@@ -988,6 +1203,39 @@ class _GroupListTile extends StatelessWidget {
 }
 
 // ================================================================ SOS button
+class _ChatQuickAction extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final VoidCallback? onTap;
+  const _ChatQuickAction({required this.icon, required this.label, this.onTap});
+  @override
+  Widget build(BuildContext context) => Material(
+      color: RifqaChat.paper,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+              height: 43,
+              padding: const EdgeInsets.symmetric(horizontal: 3),
+              decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: RifqaChat.border)),
+              child:
+                  Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                Icon(icon, color: RifqaChat.deep, size: 16),
+                const SizedBox(width: 3),
+                Flexible(
+                    child: Text(label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: RifqaChat.deep))),
+              ]))));
+}
+
 class _SosHoldButton extends StatefulWidget {
   final VoidCallback onTriggered;
   final bool enabled;
@@ -996,13 +1244,15 @@ class _SosHoldButton extends StatefulWidget {
   State<_SosHoldButton> createState() => _SosHoldButtonState();
 }
 
-class _SosHoldButtonState extends State<_SosHoldButton> with SingleTickerProviderStateMixin {
+class _SosHoldButtonState extends State<_SosHoldButton>
+    with SingleTickerProviderStateMixin {
   late final AnimationController c;
 
   @override
   void initState() {
     super.initState();
-    c = AnimationController(vsync: this, duration: const Duration(milliseconds: 1200))
+    c = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1200))
       ..addStatusListener((s) {
         if (s == AnimationStatus.completed) {
           HapticFeedback.heavyImpact();
@@ -1028,13 +1278,20 @@ class _SosHoldButtonState extends State<_SosHoldButton> with SingleTickerProvide
         animation: c,
         builder: (_, __) => Container(
           height: 46,
-          constraints: const BoxConstraints(minWidth: 190),
+          constraints: const BoxConstraints(minWidth: 0),
           decoration: BoxDecoration(
             color: softOf(context, AppColors.red, AppColors.softRed),
             borderRadius: BorderRadius.circular(23),
-            border: Border.all(color: AppColors.red.withValues(alpha: widget.enabled ? 1 : .4)),
+            border: Border.all(
+                color:
+                    AppColors.red.withValues(alpha: widget.enabled ? 1 : .4)),
             boxShadow: c.value > 0
-                ? [BoxShadow(color: AppColors.red.withValues(alpha: .25), blurRadius: 10, spreadRadius: 1)]
+                ? [
+                    BoxShadow(
+                        color: AppColors.red.withValues(alpha: .25),
+                        blurRadius: 10,
+                        spreadRadius: 1)
+                  ]
                 : null,
           ),
           child: ClipRRect(
@@ -1051,12 +1308,19 @@ class _SosHoldButtonState extends State<_SosHoldButton> with SingleTickerProvide
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: Row(mainAxisSize: MainAxisSize.min, children: [
                   Icon(Icons.sos_rounded,
-                      size: 20, color: c.value > .45 ? Colors.white : AppColors.red),
+                      size: 20,
+                      color: c.value > .45 ? Colors.white : AppColors.red),
                   const SizedBox(width: 8),
-                  Text(c.value > 0 ? 'استمر بالضغط...' : 'أنا تائه · اضغط مطولًا',
-                      style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          color: c.value > .45 ? Colors.white : AppColors.red)),
+                  Flexible(
+                      child: Text(
+                          c.value > 0 ? 'استمر...' : 'SOS · اضغطي مطولًا',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              color: c.value > .45
+                                  ? Colors.white
+                                  : AppColors.red))),
                 ]),
               ),
             ]),
@@ -1082,7 +1346,8 @@ class GroupChatScreen extends StatefulWidget {
   State<GroupChatScreen> createState() => _GroupChatScreenState();
 }
 
-class _GroupChatScreenState extends State<GroupChatScreen> with BusyMixin<GroupChatScreen> {
+class _GroupChatScreenState extends State<GroupChatScreen>
+    with BusyMixin<GroupChatScreen> {
   final textController = TextEditingController();
   final service = GroupService.instance;
   String get myUid => FirebaseAuth.instance.currentUser?.uid ?? '';
@@ -1115,7 +1380,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> with BusyMixin<GroupC
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
         content: Text(body, style: const TextStyle(height: 1.6)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('إلغاء')),
           FilledButton(
               style: FilledButton.styleFrom(backgroundColor: AppColors.green),
               onPressed: () => Navigator.pop(ctx, true),
@@ -1127,7 +1394,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> with BusyMixin<GroupC
   }
 
   // ---- static location / SOS
-  Future<void> shareLocation({bool emergency = false, bool skipConfirm = false}) async {
+  Future<void> shareLocation(
+      {bool emergency = false, bool skipConfirm = false}) async {
     await run(() async {
       if (!skipConfirm) {
         final ok = await confirm('مشاركة موقعك؟',
@@ -1136,9 +1404,11 @@ class _GroupChatScreenState extends State<GroupChatScreen> with BusyMixin<GroupC
       }
       await ensureLocationPermission();
       final p = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+        locationSettings:
+            const LocationSettings(accuracy: LocationAccuracy.high),
       );
-      await service.sendLocation(widget.groupId, p.latitude, p.longitude, emergency: emergency);
+      await service.sendLocation(widget.groupId, p.latitude, p.longitude,
+          emergency: emergency);
       toast(emergency
           ? 'تم إرسال استغاثتك للمجموعة. وإن كان الخطر حقيقيًا فاتصل بالجهات الرسمية.'
           : 'تم إرسال الموقع');
@@ -1156,9 +1426,11 @@ class _GroupChatScreenState extends State<GroupChatScreen> with BusyMixin<GroupC
                   decoration: BoxDecoration(
                       color: softOf(ctx, AppColors.green, AppColors.softGreen),
                       borderRadius: BorderRadius.circular(12)),
-                  child: const Icon(Icons.timer_outlined, color: AppColors.green),
+                  child:
+                      const Icon(Icons.timer_outlined, color: AppColors.green),
                 ),
-                title: Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
+                title: Text(label,
+                    style: const TextStyle(fontWeight: FontWeight.w700)),
                 subtitle: Text(sub),
                 onTap: () => Navigator.pop(ctx, d),
               );
@@ -1169,12 +1441,15 @@ class _GroupChatScreenState extends State<GroupChatScreen> with BusyMixin<GroupC
                 child: Align(
                   alignment: AlignmentDirectional.centerStart,
                   child: Text('مدة مشاركة موقعك مباشرة',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
                 ),
               ),
-              tile('15 دقيقة', 'مناسبة للتجمّع السريع', const Duration(minutes: 15)),
+              tile('15 دقيقة', 'مناسبة للتجمّع السريع',
+                  const Duration(minutes: 15)),
               tile('ساعة', 'للتنقل أو الطواف', const Duration(hours: 1)),
-              tile('8 ساعات', 'يوم كامل، ويمكنك الإيقاف في أي وقت', const Duration(hours: 8)),
+              tile('8 ساعات', 'يوم كامل، ويمكنك الإيقاف في أي وقت',
+                  const Duration(hours: 8)),
               const SizedBox(height: 8),
             ]),
           );
@@ -1188,23 +1463,27 @@ class _GroupChatScreenState extends State<GroupChatScreen> with BusyMixin<GroupC
       await ensureLocationPermission();
       final expires = DateTime.now().toUtc().add(d);
       final first = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high),
+        locationSettings:
+            const LocationSettings(accuracy: LocationAccuracy.high),
       );
-      await service.publishLocation(widget.groupId, first.latitude, first.longitude, expires);
+      await service.publishLocation(
+          widget.groupId, first.latitude, first.longitude, expires);
       _lastSent = DateTime.now();
       await _posSub?.cancel();
       _posSub = Geolocator.getPositionStream(
-        locationSettings:
-            const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 30),
+        locationSettings: const LocationSettings(
+            accuracy: LocationAccuracy.high, distanceFilter: 30),
       ).listen((p) async {
         if (DateTime.now().toUtc().isAfter(expires)) {
           await stopLiveShare();
           return;
         }
-        if (DateTime.now().difference(_lastSent) < const Duration(seconds: 30)) return;
+        if (DateTime.now().difference(_lastSent) < const Duration(seconds: 30))
+          return;
         _lastSent = DateTime.now();
         try {
-          await service.publishLocation(widget.groupId, p.latitude, p.longitude, expires);
+          await service.publishLocation(
+              widget.groupId, p.latitude, p.longitude, expires);
         } catch (_) {}
       }, onError: (_) {});
       if (mounted) setState(() => _shareUntil = expires);
@@ -1238,21 +1517,30 @@ class _GroupChatScreenState extends State<GroupChatScreen> with BusyMixin<GroupC
                 width: 64,
                 height: 64,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [AppColors.gold, Color(0xFF9A7A2E)]),
+                  gradient: const LinearGradient(
+                      colors: [AppColors.gold, Color(0xFF9A7A2E)]),
                   borderRadius: BorderRadius.circular(20),
-                  boxShadow: [BoxShadow(color: AppColors.gold.withValues(alpha: .35), blurRadius: 14, offset: const Offset(0, 6))],
+                  boxShadow: [
+                    BoxShadow(
+                        color: AppColors.gold.withValues(alpha: .35),
+                        blurRadius: 14,
+                        offset: const Offset(0, 6))
+                  ],
                 ),
-                child: const Icon(Icons.card_giftcard_rounded, color: Colors.white, size: 30),
+                child: const Icon(Icons.card_giftcard_rounded,
+                    color: Colors.white, size: 30),
               ),
               const SizedBox(height: 14),
               Text('كود دعوة ${widget.groupName}',
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
+                  style: const TextStyle(
+                      fontSize: 19, fontWeight: FontWeight.w800)),
               const SizedBox(height: 4),
               Row(mainAxisSize: MainAxisSize.min, children: [
                 Icon(Icons.schedule_rounded, size: 14, color: mutedOf(ctx)),
                 const SizedBox(width: 4),
-                Text('صالح 24 ساعة · تم نسخه تلقائيًا', style: TextStyle(color: mutedOf(ctx), fontSize: 12.5)),
+                Text('صالح 24 ساعة · تم نسخه تلقائيًا',
+                    style: TextStyle(color: mutedOf(ctx), fontSize: 12.5)),
               ]),
               const SizedBox(height: 20),
               DottedTicket(code: code),
@@ -1264,8 +1552,10 @@ class _GroupChatScreenState extends State<GroupChatScreen> with BusyMixin<GroupC
                     child: OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.green,
-                          side: const BorderSide(color: AppColors.green, width: 1.3),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
+                          side: const BorderSide(
+                              color: AppColors.green, width: 1.3),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16))),
                       onPressed: () {
                         Clipboard.setData(ClipboardData(text: code));
                         toast('تم نسخ الكود');
@@ -1282,23 +1572,36 @@ class _GroupChatScreenState extends State<GroupChatScreen> with BusyMixin<GroupC
                     child: DecoratedBox(
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(16),
-                        gradient: const LinearGradient(colors: [AppColors.green, AppColors.greenDark]),
-                        boxShadow: [BoxShadow(color: AppColors.green.withValues(alpha: .32), blurRadius: 10, offset: const Offset(0, 4))],
+                        gradient: const LinearGradient(
+                            colors: [AppColors.green, AppColors.greenDark]),
+                        boxShadow: [
+                          BoxShadow(
+                              color: AppColors.green.withValues(alpha: .32),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4))
+                        ],
                       ),
                       child: Material(
                         color: Colors.transparent,
                         child: InkWell(
                           borderRadius: BorderRadius.circular(16),
                           onTap: () {
-                            Share.share('انضم لمجموعتنا "${widget.groupName}" في رفقتي 🕋\nكود الدعوة: $code');
+                            Share.share(
+                                'انضم لمجموعتنا "${widget.groupName}" في رفقتي 🕋\nكود الدعوة: $code');
                             Navigator.pop(ctx);
                           },
                           child: const Center(
-                            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                              Icon(Icons.ios_share_rounded, color: Colors.white, size: 19),
-                              SizedBox(width: 8),
-                              Text('مشاركة', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-                            ]),
+                            child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.ios_share_rounded,
+                                      color: Colors.white, size: 19),
+                                  SizedBox(width: 8),
+                                  Text('مشاركة',
+                                      style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w700)),
+                                ]),
                           ),
                         ),
                       ),
@@ -1327,7 +1630,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> with BusyMixin<GroupC
               child: Align(
                 alignment: AlignmentDirectional.centerStart,
                 child: Text('طلبات الانضمام',
-                    style: TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
+                    style:
+                        TextStyle(fontSize: 19, fontWeight: FontWeight.w800)),
               ),
             ),
             Expanded(
@@ -1341,29 +1645,38 @@ class _GroupChatScreenState extends State<GroupChatScreen> with BusyMixin<GroupC
                         message: friendlyError(snap.error!));
                   }
                   if (!snap.hasData) {
-                    return const Center(child: CircularProgressIndicator(color: AppColors.green));
+                    return const Center(
+                        child:
+                            CircularProgressIndicator(color: AppColors.green));
                   }
                   if (snap.data!.docs.isEmpty) {
                     return const StateView(
-                        icon: Icons.inbox_outlined, title: 'لا توجد طلبات معلقة');
+                        icon: Icons.inbox_outlined,
+                        title: 'لا توجد طلبات معلقة');
                   }
                   return ListView(
                     children: snap.data!.docs.map((d) {
                       final name = d.data()['userName']?.toString() ?? d.id;
                       return ListTile(
                         leading: GroupAvatar(name, size: 42),
-                        title: Text(name, style: const TextStyle(fontWeight: FontWeight.w700)),
+                        title: Text(name,
+                            style:
+                                const TextStyle(fontWeight: FontWeight.w700)),
                         subtitle: const Text('يطلب الانضمام'),
-                        trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+                        trailing:
+                            Row(mainAxisSize: MainAxisSize.min, children: [
                           IconButton(
                             tooltip: 'رفض',
                             color: AppColors.red,
-                            onPressed: () => run(() => service.reject(widget.groupId, d.id)),
+                            onPressed: () =>
+                                run(() => service.reject(widget.groupId, d.id)),
                             icon: const Icon(Icons.close_rounded),
                           ),
                           FilledButton(
-                            style: FilledButton.styleFrom(backgroundColor: AppColors.green),
-                            onPressed: () => run(() => service.approve(widget.groupId, d.id)),
+                            style: FilledButton.styleFrom(
+                                backgroundColor: AppColors.green),
+                            onPressed: () => run(
+                                () => service.approve(widget.groupId, d.id)),
                             child: const Text('قبول'),
                           ),
                         ]),
@@ -1411,7 +1724,12 @@ class _GroupChatScreenState extends State<GroupChatScreen> with BusyMixin<GroupC
           color: bg,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: border.withValues(alpha: .5)),
-          boxShadow: [BoxShadow(color: border.withValues(alpha: .12), blurRadius: 10, offset: const Offset(0, 4))],
+          boxShadow: [
+            BoxShadow(
+                color: border.withValues(alpha: .12),
+                blurRadius: 10,
+                offset: const Offset(0, 4))
+          ],
         ),
         child: child,
       );
@@ -1421,7 +1739,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> with BusyMixin<GroupC
       stream: service.alerts(widget.groupId),
       builder: (context, snap) {
         if (!snap.hasData) return const SizedBox.shrink();
-        final open = snap.data!.docs.where((d) => d.data()['status'] == 'open').toList();
+        final open =
+            snap.data!.docs.where((d) => d.data()['status'] == 'open').toList();
         if (open.isEmpty) return const SizedBox.shrink();
         return Column(
           children: open.map((d) {
@@ -1434,24 +1753,31 @@ class _GroupChatScreenState extends State<GroupChatScreen> with BusyMixin<GroupC
                 Row(children: [
                   Container(
                     padding: const EdgeInsets.all(8),
-                    decoration:
-                        const BoxDecoration(color: AppColors.red, shape: BoxShape.circle),
-                    child: const Icon(Icons.sos_rounded, color: Colors.white, size: 20),
+                    decoration: const BoxDecoration(
+                        color: AppColors.red, shape: BoxShape.circle),
+                    child: const Icon(Icons.sos_rounded,
+                        color: Colors.white, size: 20),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Row(mainAxisSize: MainAxisSize.min, children: [
-                        const PulseDot(color: AppColors.red, size: 7),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text('${a['senderName'] ?? 'عضو'} يطلب المساعدة',
-                              style: TextStyle(fontWeight: FontWeight.w800, color: inkOf(context))),
-                        ),
-                      ]),
-                      Text(ago(a['createdAt'] as Timestamp?),
-                          style: TextStyle(fontSize: 12, color: mutedOf(context))),
-                    ]),
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(mainAxisSize: MainAxisSize.min, children: [
+                            const PulseDot(color: AppColors.red, size: 7),
+                            const SizedBox(width: 6),
+                            Flexible(
+                              child: Text(
+                                  '${a['senderName'] ?? 'عضو'} يطلب المساعدة',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.w800,
+                                      color: inkOf(context))),
+                            ),
+                          ]),
+                          Text(ago(a['createdAt'] as Timestamp?),
+                              style: TextStyle(
+                                  fontSize: 12, color: mutedOf(context))),
+                        ]),
                   ),
                 ]),
                 const SizedBox(height: 10),
@@ -1470,10 +1796,12 @@ class _GroupChatScreenState extends State<GroupChatScreen> with BusyMixin<GroupC
                     const SizedBox(width: 8),
                     Expanded(
                       child: FilledButton.icon(
-                        style: FilledButton.styleFrom(backgroundColor: AppColors.green),
+                        style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.green),
                         onPressed: busy
                             ? null
-                            : () => run(() => service.resolveAlert(widget.groupId, d.id)),
+                            : () => run(() =>
+                                service.resolveAlert(widget.groupId, d.id)),
                         icon: const Icon(Icons.check_circle_outline, size: 18),
                         label: const Text('تمت المساعدة'),
                       ),
@@ -1503,7 +1831,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> with BusyMixin<GroupC
         initialValue: currentText,
       ),
     );
-    if (text == null || text.trim().isEmpty || text.trim() == currentText.trim()) return;
+    if (text == null ||
+        text.trim().isEmpty ||
+        text.trim() == currentText.trim()) return;
     await run(() async {
       await service.deleteAnnouncement(widget.groupId, id);
       await service.postAnnouncement(widget.groupId, text);
@@ -1514,7 +1844,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> with BusyMixin<GroupC
     return StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
       stream: service.announcements(widget.groupId),
       builder: (context, snap) {
-        if (!snap.hasData || snap.data!.docs.isEmpty) return const SizedBox.shrink();
+        if (!snap.hasData || snap.data!.docs.isEmpty)
+          return const SizedBox.shrink();
         final d = snap.data!.docs.first;
         return PinnedAnnouncement(
           key: ValueKey(d.id),
@@ -1522,8 +1853,14 @@ class _GroupChatScreenState extends State<GroupChatScreen> with BusyMixin<GroupC
           data: d.data(),
           isAdmin: widget.isAdmin,
           myUid: myUid,
-          onDelete: busy ? null : () => run(() => service.deleteAnnouncement(widget.groupId, d.id)),
-          onEdit: busy ? null : () => editAnnouncement(d.id, d.data()['text']?.toString() ?? ''),
+          onDelete: busy
+              ? null
+              : () =>
+                  run(() => service.deleteAnnouncement(widget.groupId, d.id)),
+          onEdit: busy
+              ? null
+              : () =>
+                  editAnnouncement(d.id, d.data()['text']?.toString() ?? ''),
         );
       },
     );
@@ -1542,7 +1879,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> with BusyMixin<GroupC
         const SizedBox(width: 8),
         Expanded(
           child: Text('موقعك مشارك حتى ${hhmm(until.toLocal())}',
-              style: TextStyle(fontWeight: FontWeight.w700, color: inkOf(context))),
+              style: TextStyle(
+                  fontWeight: FontWeight.w700, color: inkOf(context))),
         ),
         TextButton(
           onPressed: stopLiveShare,
@@ -1559,9 +1897,9 @@ class _GroupChatScreenState extends State<GroupChatScreen> with BusyMixin<GroupC
           margin: const EdgeInsets.symmetric(vertical: 10),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
           decoration: BoxDecoration(
-              color: isDark(context) ? Colors.white10 : const Color(0xFFE6EBE8),
-              borderRadius: BorderRadius.circular(14)),
-          child: Text(dayLabel(d), style: TextStyle(fontSize: 12, color: mutedOf(context))),
+              color: RifqaChat.cream, borderRadius: BorderRadius.circular(14)),
+          child: Text(dayLabel(d),
+              style: TextStyle(fontSize: 12, color: mutedOf(context))),
         ),
       );
 
@@ -1583,81 +1921,99 @@ class _GroupChatScreenState extends State<GroupChatScreen> with BusyMixin<GroupC
     );
 
     return Align(
-      alignment: mine ? AlignmentDirectional.centerStart : AlignmentDirectional.centerEnd,
+      alignment: mine
+          ? AlignmentDirectional.centerStart
+          : AlignmentDirectional.centerEnd,
       child: Container(
-        constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * .78),
+        constraints:
+            BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * .78),
         margin: const EdgeInsets.symmetric(vertical: 2),
         padding: const EdgeInsets.fromLTRB(12, 8, 12, 6),
         decoration: BoxDecoration(
-          color: mine ? AppColors.green : surfaceOf(context),
+          color: mine ? RifqaChat.emerald : RifqaChat.paper,
           borderRadius: radius,
           border: mine ? null : Border.all(color: lineOf(context)),
           boxShadow: [
             BoxShadow(
-              color: (mine ? AppColors.green : Colors.black).withValues(alpha: mine ? .22 : .05),
+              color: (mine ? AppColors.green : Colors.black)
+                  .withValues(alpha: mine ? .22 : .05),
               blurRadius: 10,
               offset: const Offset(0, 3),
             ),
           ],
         ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
-          if (!mine && showName)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 3),
-              child: Text(m['senderName']?.toString() ?? 'عضو',
-                  style: const TextStyle(
-                      fontSize: 12, fontWeight: FontWeight.w800, color: AppColors.gold)),
-            ),
-          if (isLocation) ...[
-            Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(Icons.location_on_rounded, color: mine ? Colors.white : AppColors.red, size: 20),
-              const SizedBox(width: 6),
-              Text('موقع مشارك', style: TextStyle(fontWeight: FontWeight.w800, color: fg)),
-            ]),
-            const SizedBox(height: 4),
-            Text('${m['lat']}, ${m['lng']}', style: TextStyle(fontSize: 12, color: sub)),
-            const SizedBox(height: 8),
-            Row(mainAxisSize: MainAxisSize.min, children: [
-              _MiniButton(
-                label: 'فتح',
-                icon: Icons.map_outlined,
-                light: mine,
-                onTap: () => openInMaps(m['lat'] ?? 0, m['lng'] ?? 0),
-              ),
-              const SizedBox(width: 6),
-              _MiniButton(
-                label: 'نسخ',
-                icon: Icons.copy_rounded,
-                light: mine,
-                onTap: () {
-                  Clipboard.setData(ClipboardData(text: '${m['lat']},${m['lng']}'));
-                  toast('تم نسخ الإحداثيات');
-                },
-              ),
-            ]),
-          ] else if (m['type'] == 'image') ...[
-            ImageMessage(groupId: widget.groupId, mediaId: m['mediaId']?.toString() ?? ''),
-            if ((m['text'] ?? '').toString().isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 6),
-                child: Text(m['text'].toString(),
+        child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (!mine && showName)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 3),
+                  child: Text(m['senderName']?.toString() ?? 'عضو',
+                      style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.gold)),
+                ),
+              if (isLocation) ...[
+                Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.location_on_rounded,
+                      color: mine ? Colors.white : AppColors.red, size: 20),
+                  const SizedBox(width: 6),
+                  Text('موقع مشارك',
+                      style: TextStyle(fontWeight: FontWeight.w800, color: fg)),
+                ]),
+                const SizedBox(height: 4),
+                Text('${m['lat']}, ${m['lng']}',
+                    style: TextStyle(fontSize: 12, color: sub)),
+                const SizedBox(height: 8),
+                Row(mainAxisSize: MainAxisSize.min, children: [
+                  _MiniButton(
+                    label: 'فتح',
+                    icon: Icons.map_outlined,
+                    light: mine,
+                    onTap: () => openInMaps(m['lat'] ?? 0, m['lng'] ?? 0),
+                  ),
+                  const SizedBox(width: 6),
+                  _MiniButton(
+                    label: 'نسخ',
+                    icon: Icons.copy_rounded,
+                    light: mine,
+                    onTap: () {
+                      Clipboard.setData(
+                          ClipboardData(text: '${m['lat']},${m['lng']}'));
+                      toast('تم نسخ الإحداثيات');
+                    },
+                  ),
+                ]),
+              ] else if (m['type'] == 'image') ...[
+                ImageMessage(
+                    groupId: widget.groupId,
+                    mediaId: m['mediaId']?.toString() ?? ''),
+                if ((m['text'] ?? '').toString().isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: Text(m['text'].toString(),
+                        style:
+                            TextStyle(fontSize: 15.5, height: 1.5, color: fg)),
+                  ),
+              ] else if (m['type'] == 'voice')
+                VoiceMessage(
+                  groupId: widget.groupId,
+                  mediaId: m['mediaId']?.toString() ?? '',
+                  durationMs: (m['durationMs'] as num?)?.toInt() ?? 0,
+                  mine: mine,
+                )
+              else
+                Text(m['text']?.toString() ?? '',
                     style: TextStyle(fontSize: 15.5, height: 1.5, color: fg)),
-              ),
-          ] else if (m['type'] == 'voice')
-            VoiceMessage(
-              groupId: widget.groupId,
-              mediaId: m['mediaId']?.toString() ?? '',
-              durationMs: (m['durationMs'] as num?)?.toInt() ?? 0,
-              mine: mine,
-            )
-          else
-            Text(m['text']?.toString() ?? '', style: TextStyle(fontSize: 15.5, height: 1.5, color: fg)),
-          if (t != null)
-            Padding(
-              padding: const EdgeInsets.only(top: 3),
-              child: Text(hhmm(t), style: TextStyle(fontSize: 10.5, color: sub)),
-            ),
-        ]),
+              if (t != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 3),
+                  child: Text(hhmm(t),
+                      style: TextStyle(fontSize: 10.5, color: sub)),
+                ),
+            ]),
       ),
     );
   }
@@ -1688,15 +2044,18 @@ class _GroupChatScreenState extends State<GroupChatScreen> with BusyMixin<GroupC
               leading: const Icon(Icons.copy_rounded),
               title: const Text('نسخ الإحداثيات'),
               onTap: () {
-                Clipboard.setData(ClipboardData(text: '${m['lat']},${m['lng']}'));
+                Clipboard.setData(
+                    ClipboardData(text: '${m['lat']},${m['lng']}'));
                 Navigator.pop(ctx);
                 toast('تم نسخ الإحداثيات');
               },
             ),
           if (canDelete)
             ListTile(
-              leading: const Icon(Icons.delete_outline_rounded, color: AppColors.red),
-              title: const Text('حذف الرسالة', style: TextStyle(color: AppColors.red)),
+              leading: const Icon(Icons.delete_outline_rounded,
+                  color: AppColors.red),
+              title: const Text('حذف الرسالة',
+                  style: TextStyle(color: AppColors.red)),
               onTap: () {
                 Navigator.pop(ctx);
                 run(() => service.deleteMessage(widget.groupId, doc.id,
@@ -1721,14 +2080,17 @@ class _GroupChatScreenState extends State<GroupChatScreen> with BusyMixin<GroupC
           );
         }
         if (!snap.hasData) {
-          return const Center(child: CircularProgressIndicator(color: AppColors.green));
+          return const Center(
+              child: CircularProgressIndicator(color: AppColors.green));
         }
-        final docs = snap.data!.docs.where((d) => d.id != '_schema_template').toList();
+        final docs =
+            snap.data!.docs.where((d) => d.id != '_schema_template').toList();
         if (docs.isEmpty) {
           return const StateView(
             icon: Icons.chat_bubble_outline_rounded,
             title: 'ابدأ المحادثة',
-            message: 'أرسل أول رسالة لمجموعتك، أو شارك موقعك ليعرف الجميع مكانك.',
+            message:
+                'أرسل أول رسالة لمجموعتك، أو شارك موقعك ليعرف الجميع مكانك.',
           );
         }
         return ListView.builder(
@@ -1740,8 +2102,10 @@ class _GroupChatScreenState extends State<GroupChatScreen> with BusyMixin<GroupC
             final t = (m['createdAt'] as Timestamp?)?.toDate();
             final older = i + 1 < docs.length ? docs[i + 1].data() : null;
             final olderT = (older?['createdAt'] as Timestamp?)?.toDate();
-            final showDate = t != null && (olderT == null || !sameDay(t, olderT));
-            final showName = showDate || older == null || older['senderId'] != m['senderId'];
+            final showDate =
+                t != null && (olderT == null || !sameDay(t, olderT));
+            final showName =
+                showDate || older == null || older['senderId'] != m['senderId'];
             final mine = m['senderId'] == myUid;
             return Column(children: [
               if (showDate) dateChip(t),
@@ -1764,51 +2128,52 @@ class _GroupChatScreenState extends State<GroupChatScreen> with BusyMixin<GroupC
       decoration: BoxDecoration(
         color: surfaceOf(context),
         border: Border(top: BorderSide(color: lineOf(context))),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .04), blurRadius: 14, offset: const Offset(0, -4))],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: .04),
+              blurRadius: 14,
+              offset: const Offset(0, -4))
+        ],
       ),
       child: SafeArea(
         top: false,
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          SizedBox(
-            height: 58,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
-              children: [
-                _SosHoldButton(
-                  enabled: !busy,
-                  onTriggered: () => shareLocation(emergency: true, skipConfirm: true),
-                ),
-                const SizedBox(width: 8),
-                ActionChip(
-                  avatar: const Icon(Icons.location_on_outlined, size: 18, color: AppColors.green),
-                  label: const Text('موقعي'),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18), side: BorderSide(color: lineOf(context))),
-                  onPressed: busy ? null : () => shareLocation(),
-                ),
-                const SizedBox(width: 8),
-                ActionChip(
-                  avatar: Icon(Icons.share_location_rounded,
-                      size: 18, color: _shareUntil != null ? Colors.white : AppColors.green),
-                  label: Text('مشاركة مباشرة',
-                      style: TextStyle(color: _shareUntil != null ? Colors.white : null)),
-                  backgroundColor: _shareUntil != null ? AppColors.green : null,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                      side: BorderSide(color: _shareUntil != null ? AppColors.green : lineOf(context))),
-                  onPressed: busy || _shareUntil != null ? null : startLiveShare,
-                ),
-              ],
-            ),
-          ),
+          Padding(
+              padding: const EdgeInsets.fromLTRB(8, 9, 8, 2),
+              child: Row(children: [
+                Expanded(
+                    flex: 3,
+                    child: _SosHoldButton(
+                        enabled: !busy,
+                        onTriggered: () =>
+                            shareLocation(emergency: true, skipConfirm: true))),
+                const SizedBox(width: 5),
+                Expanded(
+                    flex: 2,
+                    child: _ChatQuickAction(
+                        icon: Icons.location_on_outlined,
+                        label: 'موقعي',
+                        onTap: busy ? null : () => shareLocation())),
+                const SizedBox(width: 5),
+                Expanded(
+                    flex: 2,
+                    child: _ChatQuickAction(
+                        icon: Icons.share_location_rounded,
+                        label: _shareUntil == null ? 'مباشر' : 'إيقاف',
+                        onTap: busy
+                            ? null
+                            : (_shareUntil == null
+                                ? startLiveShare
+                                : stopLiveShare))),
+              ])),
           ChatInputBar(
             controller: textController,
             busy: busy,
             onSendText: (t) => service.sendMessage(widget.groupId, t),
             onSendImage: (bytes, caption) =>
                 service.sendImage(widget.groupId, bytes, caption: caption),
-            onSendVoice: (bytes, ms) => service.sendVoice(widget.groupId, bytes, ms),
+            onSendVoice: (bytes, ms) =>
+                service.sendVoice(widget.groupId, bytes, ms),
             onError: toast,
           ),
         ]),
@@ -1816,7 +2181,8 @@ class _GroupChatScreenState extends State<GroupChatScreen> with BusyMixin<GroupC
     );
   }
 
-  Widget _circleIconButton({required IconData icon, required VoidCallback? onTap, String? tooltip}) {
+  Widget _circleIconButton(
+      {required IconData icon, required VoidCallback? onTap, String? tooltip}) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 3),
       child: Material(
@@ -1839,111 +2205,115 @@ class _GroupChatScreenState extends State<GroupChatScreen> with BusyMixin<GroupC
     return Scaffold(
       backgroundColor: scaffoldOf(context),
       appBar: AppBar(
-        backgroundColor: AppColors.green,
+        backgroundColor: RifqaChat.deep,
         foregroundColor: Colors.white,
         elevation: 0,
         systemOverlayStyle: SystemUiOverlayStyle.light,
-        titleSpacing: 0,
+        titleSpacing: 8,
         title: StreamBuilder<DocumentSnapshot<Map<String, dynamic>>>(
           stream: service.group(widget.groupId),
           builder: (context, s) {
             final n = (s.data?.data()?['memberIds'] as List?)?.length;
             return Row(children: [
-              GroupAvatar(widget.groupName, size: 38),
+              RifqaPhotoAvatar(
+                  size: 38,
+                  variant:
+                      widget.groupName.runes.fold<int>(0, (a, b) => a + b) % 5),
               const SizedBox(width: 10),
               Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(widget.groupName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800)),
-                  Row(mainAxisSize: MainAxisSize.min, children: [
-                    if (n != null) ...[
-                      const Icon(Icons.people_alt_outlined, size: 12, color: Colors.white70),
-                      const SizedBox(width: 3),
-                      Text('$n عضو', style: const TextStyle(fontSize: 12, color: Colors.white70)),
-                      const SizedBox(width: 8),
-                      const Text('•', style: TextStyle(fontSize: 11, color: Colors.white54)),
-                      const SizedBox(width: 8),
-                    ],
-                    StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-                      stream: service.messages(widget.groupId),
-                      builder: (context, msgSnap) {
-                        if (!msgSnap.hasData) return const SizedBox.shrink();
-                        final count = msgSnap.data!.docs
-                            .where((d) => d.id != '_schema_template')
-                            .length;
-                        return Row(mainAxisSize: MainAxisSize.min, children: [
-                          const Icon(Icons.chat_bubble_outline_rounded, size: 12, color: Colors.white70),
+                child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(widget.groupName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                              fontSize: 17, fontWeight: FontWeight.w800)),
+                      Row(mainAxisSize: MainAxisSize.min, children: [
+                        if (n != null) ...[
+                          const Icon(Icons.people_alt_outlined,
+                              size: 12, color: Colors.white70),
                           const SizedBox(width: 3),
-                          Text('$count رسالة', style: const TextStyle(fontSize: 12, color: Colors.white70)),
-                        ]);
-                      },
-                    ),
-                  ]),
-                ]),
+                          Text('$n عضو',
+                              style: const TextStyle(
+                                  fontSize: 12, color: Colors.white70)),
+                          const SizedBox(width: 8),
+                          const Text('•',
+                              style: TextStyle(
+                                  fontSize: 11, color: Colors.white54)),
+                          const SizedBox(width: 8),
+                        ],
+                      ]),
+                    ]),
               ),
             ]);
           },
         ),
         actions: [
-          _circleIconButton(
-            icon: Icons.map_outlined,
-            tooltip: 'الخريطة',
-            onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => GroupMapScreen(
-                        groupId: widget.groupId, groupName: widget.groupName))),
-          ),
-          _circleIconButton(
-            icon: Icons.people_alt_outlined,
-            tooltip: 'الأعضاء',
-            onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => GroupMembersScreen(
-                        groupId: widget.groupId, groupName: widget.groupName))),
-          ),
-          if (widget.isAdmin)
-            PopupMenuButton<String>(
-              tooltip: 'أدوات المشرف',
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              icon: const Icon(Icons.more_vert_rounded),
-              onSelected: (v) {
-                if (v == 'invite') invite();
-                if (v == 'requests') showRequests();
-                if (v == 'announce') postAnnouncement();
-              },
-              itemBuilder: (_) => const [
-                PopupMenuItem(
+          PopupMenuButton<String>(
+            tooltip: 'المجموعة',
+            icon: const Icon(Icons.more_vert_rounded),
+            onSelected: (v) {
+              if (v == 'map')
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => GroupMapScreen(
+                            groupId: widget.groupId,
+                            groupName: widget.groupName)));
+              if (v == 'members')
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => GroupMembersScreen(
+                            groupId: widget.groupId,
+                            groupName: widget.groupName)));
+              if (v == 'invite') invite();
+              if (v == 'requests') showRequests();
+              if (v == 'announce') postAnnouncement();
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                  value: 'map',
+                  child: ListTile(
+                      leading: Icon(Icons.map_outlined),
+                      title: Text('خريطة المجموعة'),
+                      contentPadding: EdgeInsets.zero)),
+              const PopupMenuItem(
+                  value: 'members',
+                  child: ListTile(
+                      leading: Icon(Icons.people_outline_rounded),
+                      title: Text('الأعضاء'),
+                      contentPadding: EdgeInsets.zero)),
+              if (widget.isAdmin) ...[
+                const PopupMenuItem(
                     value: 'invite',
                     child: ListTile(
                         leading: Icon(Icons.link_rounded),
-                        title: Text('إنشاء كود دعوة'),
+                        title: Text('إنشاء دعوة'),
                         contentPadding: EdgeInsets.zero)),
-                PopupMenuItem(
+                const PopupMenuItem(
                     value: 'requests',
                     child: ListTile(
-                        leading: Icon(Icons.person_add_alt_1_outlined),
+                        leading: Icon(Icons.person_add_alt_1_rounded),
                         title: Text('طلبات الانضمام'),
                         contentPadding: EdgeInsets.zero)),
-                PopupMenuItem(
+                const PopupMenuItem(
                     value: 'announce',
                     child: ListTile(
-                        leading: Icon(Icons.campaign_outlined),
-                        title: Text('نشر إعلان'),
+                        leading: Icon(Icons.campaign_rounded),
+                        title: Text('إعلان للمجموعة'),
                         contentPadding: EdgeInsets.zero)),
               ],
-            ),
-          const SizedBox(width: 4),
+            ],
+          ),
         ],
       ),
       body: Column(children: [
         alertsBanner(),
         announcementBanner(),
         sharingBar(),
-        Expanded(child: messagesList()),
+        Expanded(child: RifqaChatBackdrop(child: messagesList())),
         composer(),
       ]),
     );
@@ -1979,10 +2349,12 @@ class PinnedAnnouncement extends StatefulWidget {
   State<PinnedAnnouncement> createState() => _PinnedAnnouncementState();
 }
 
-class _PinnedAnnouncementState extends State<PinnedAnnouncement> with SingleTickerProviderStateMixin {
+class _PinnedAnnouncementState extends State<PinnedAnnouncement>
+    with SingleTickerProviderStateMixin {
   static final Map<String, Map<String, String>> _store = {};
   static const _options = ['👍', '❤️', '🙏', '🤲'];
-  late final _pop = AnimationController(vsync: this, duration: const Duration(milliseconds: 220));
+  late final _pop = AnimationController(
+      vsync: this, duration: const Duration(milliseconds: 220));
 
   Map<String, String> get _reactions => _store.putIfAbsent(widget.id, () => {});
 
@@ -2025,47 +2397,65 @@ class _PinnedAnnouncementState extends State<PinnedAnnouncement> with SingleTick
           gradient: LinearGradient(
             colors: [
               softOf(context, AppColors.gold, AppColors.softGold),
-              softOf(context, AppColors.gold, AppColors.softGold).withValues(alpha: .55),
+              softOf(context, AppColors.gold, AppColors.softGold)
+                  .withValues(alpha: .55),
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: AppColors.gold.withValues(alpha: .5)),
-          boxShadow: [BoxShadow(color: AppColors.gold.withValues(alpha: .14), blurRadius: 12, offset: const Offset(0, 5))],
+          boxShadow: [
+            BoxShadow(
+                color: AppColors.gold.withValues(alpha: .14),
+                blurRadius: 12,
+                offset: const Offset(0, 5))
+          ],
         ),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Container(
               padding: const EdgeInsets.all(7),
-              decoration: const BoxDecoration(color: AppColors.gold, shape: BoxShape.circle),
-              child: const Icon(Icons.push_pin_rounded, color: Colors.white, size: 15),
+              decoration: const BoxDecoration(
+                  color: AppColors.gold, shape: BoxShape.circle),
+              child: const Icon(Icons.push_pin_rounded,
+                  color: Colors.white, size: 15),
             ),
             const SizedBox(width: 10),
             Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [
-                  Text('إعلان مثبّت',
-                      style: TextStyle(fontSize: 11.5, fontWeight: FontWeight.w800, color: goldDark)),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text('· من ${a['senderName'] ?? 'المشرف'}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(fontSize: 11.5, color: mutedOf(context))),
-                  ),
-                ]),
-                const SizedBox(height: 5),
-                Text(a['text']?.toString() ?? '',
-                    style: TextStyle(height: 1.55, fontSize: 14.5, color: inkOf(context))),
-              ]),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      Text('إعلان مثبّت',
+                          style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w800,
+                              color: goldDark)),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text('· من ${a['senderName'] ?? 'المشرف'}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                                fontSize: 11.5, color: mutedOf(context))),
+                      ),
+                    ]),
+                    const SizedBox(height: 5),
+                    Text(a['text']?.toString() ?? '',
+                        style: TextStyle(
+                            height: 1.55,
+                            fontSize: 14.5,
+                            color: inkOf(context))),
+                  ]),
             ),
             if (widget.isAdmin)
               PopupMenuButton<String>(
                 tooltip: 'أدوات المشرف للإعلان',
                 padding: EdgeInsets.zero,
                 icon: Icon(Icons.more_horiz_rounded, color: mutedOf(context)),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
                 onSelected: (v) {
                   if (v == 'edit') widget.onEdit?.call();
                   if (v == 'delete') widget.onDelete?.call();
@@ -2080,8 +2470,10 @@ class _PinnedAnnouncementState extends State<PinnedAnnouncement> with SingleTick
                   PopupMenuItem(
                       value: 'delete',
                       child: ListTile(
-                          leading: Icon(Icons.delete_outline_rounded, color: AppColors.red),
-                          title: Text('مسح الإعلان', style: TextStyle(color: AppColors.red)),
+                          leading: Icon(Icons.delete_outline_rounded,
+                              color: AppColors.red),
+                          title: Text('مسح الإعلان',
+                              style: TextStyle(color: AppColors.red)),
                           contentPadding: EdgeInsets.zero)),
                 ],
               ),
@@ -2128,7 +2520,8 @@ class _ReactionChip extends StatelessWidget {
               ? AppColors.gold.withValues(alpha: .24)
               : (isDark(context) ? Colors.white10 : Colors.white),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: selected ? AppColors.gold : lineOf(context)),
+          border:
+              Border.all(color: selected ? AppColors.gold : lineOf(context)),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           Text(emoji, style: const TextStyle(fontSize: 14.5)),
@@ -2138,7 +2531,8 @@ class _ReactionChip extends StatelessWidget {
                 style: TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w800,
-                    color: selected ? const Color(0xFF8A6B1E) : mutedOf(context))),
+                    color:
+                        selected ? const Color(0xFF8A6B1E) : mutedOf(context))),
           ],
         ]),
       ),
@@ -2151,7 +2545,11 @@ class _MiniButton extends StatelessWidget {
   final IconData icon;
   final bool light;
   final VoidCallback onTap;
-  const _MiniButton({required this.label, required this.icon, required this.light, required this.onTap});
+  const _MiniButton(
+      {required this.label,
+      required this.icon,
+      required this.light,
+      required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -2168,13 +2566,14 @@ class _MiniButton extends StatelessWidget {
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           Icon(icon, size: 15, color: color),
           const SizedBox(width: 4),
-          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: color)),
+          Text(label,
+              style: TextStyle(
+                  fontSize: 12, fontWeight: FontWeight.w700, color: color)),
         ]),
       ),
     );
   }
 }
-
 
 // ===================================================== pending join requests
 class PendingJoins extends StatelessWidget {
@@ -2193,7 +2592,8 @@ class PendingJoins extends StatelessWidget {
           child: Column(
             children: docs
                 .map((d) => _PendingJoinTile(
-                    gid: d.id, name: d.data()['groupName']?.toString() ?? 'مجموعة'))
+                    gid: d.id,
+                    name: d.data()['groupName']?.toString() ?? 'مجموعة'))
                 .toList(),
           ),
         );
@@ -2230,22 +2630,30 @@ class _PendingJoinTile extends StatelessWidget {
           margin: const EdgeInsets.only(bottom: 8),
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: softOf(context, color, rejected ? AppColors.softRed : AppColors.softGold),
+            color: softOf(context, color,
+                rejected ? AppColors.softRed : AppColors.softGold),
             borderRadius: BorderRadius.circular(18),
             border: Border.all(color: color.withValues(alpha: .5)),
           ),
           child: Row(children: [
-            Icon(rejected ? Icons.block_rounded : Icons.hourglass_top_rounded, color: color),
+            Icon(rejected ? Icons.block_rounded : Icons.hourglass_top_rounded,
+                color: color),
             const SizedBox(width: 10),
             Expanded(
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(name,
-                    style: TextStyle(fontWeight: FontWeight.w800, color: inkOf(context))),
-                Text(
-                  rejected ? 'تم رفض طلب انضمامك' : 'طلبك بانتظار موافقة المشرف',
-                  style: TextStyle(fontSize: 12.5, color: mutedOf(context)),
-                ),
-              ]),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(name,
+                        style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            color: inkOf(context))),
+                    Text(
+                      rejected
+                          ? 'تم رفض طلب انضمامك'
+                          : 'طلبك بانتظار موافقة المشرف',
+                      style: TextStyle(fontSize: 12.5, color: mutedOf(context)),
+                    ),
+                  ]),
             ),
             TextButton(
               onPressed: () async {

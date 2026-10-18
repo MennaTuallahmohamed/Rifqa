@@ -12,6 +12,10 @@ import '../madinah/madinah_screen.dart';
 import '../umrah/umrah_screen.dart';
 import '../ziyarat/ziyarat_screen.dart';
 import '../services/service_screen.dart';
+import '../markets/markets_screen.dart';
+import '../profile/rifqa_profile_screen.dart';
+import '../assistant/lost_help_screen.dart';
+import '../pilgrim_watch/pilgrim_watch_screen.dart';
 
 // =====================================================
 // RIFQA - PREMIUM HOME
@@ -91,10 +95,10 @@ const _moreServices = <_HomeService>[
     -1,
   ),
   _HomeService(
-    'المنبه',
-    'نظّم أوقاتك',
-    Icons.alarm_rounded,
-    -6,
+    'ساعة رِفقة',
+    'رفيقك في كل خطوة',
+    Icons.watch_rounded,
+    -10,
   ),
   _HomeService(
     'الأسواق',
@@ -142,7 +146,19 @@ class HomeScreen extends StatelessWidget {
       return;
     }
     if (code == -9) {
-      open(3); // Account tab
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const RifqaProfileScreen(),
+        ),
+      );
+      return;
+    }
+    if (code == -10) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const RifqaPilgrimWatchScreen(),
+        ),
+      );
       return;
     }
     if (code == 1) {
@@ -198,6 +214,15 @@ class HomeScreen extends StatelessWidget {
           builder: (_) => DuasScreen(
             repository: state.duas,
           ),
+        ),
+      );
+      return;
+    }
+
+    if (code == -7) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const MarketsScreen(),
         ),
       );
       return;
@@ -415,8 +440,11 @@ class HomeScreen extends StatelessWidget {
                   padding, 16, padding, 0,
                 ),
                 child: _SosCard(
-                  // Preserving the current Shell callback.
-                  onTap: () => open(1),
+                  onTap: () => Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => const LostHelpScreen(),
+                    ),
+                  ),
                 ),
               ),
             ),

@@ -8,8 +8,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
 import '../../core/theme/app_colors.dart';
+import 'rifqa_chat_theme.dart';
 import '../../services/groups/group_service.dart';
-import 'groups_screen.dart' show friendlyError, softOf, mutedOf, isDark, PulseDot, scaffoldOf;
+import 'groups_screen.dart'
+    show friendlyError, softOf, mutedOf, isDark, PulseDot, scaffoldOf;
 
 String _fmt(int ms) {
   final s = (ms / 1000).round();
@@ -74,7 +76,7 @@ class _ImageMessageState extends State<ImageMessage> {
         height: 150,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: isDark(context) ? Colors.white10 : const Color(0xFFE9EEEB),
+          color: isDark(context) ? Colors.white10 : RifqaChat.cream,
           borderRadius: BorderRadius.circular(16),
         ),
         child: child,
@@ -91,7 +93,9 @@ class _ImageMessageState extends State<ImageMessage> {
             child: Hero(
               tag: 'img_${widget.groupId}_${widget.mediaId}',
               child: InteractiveViewer(
-                  minScale: 1, maxScale: 5, child: Center(child: Image.memory(bytes))),
+                  minScale: 1,
+                  maxScale: 5,
+                  child: Center(child: Image.memory(bytes))),
             ),
           ),
           SafeArea(
@@ -99,9 +103,11 @@ class _ImageMessageState extends State<ImageMessage> {
               alignment: AlignmentDirectional.topStart,
               child: Container(
                 margin: const EdgeInsets.all(8),
-                decoration: const BoxDecoration(color: Colors.black45, shape: BoxShape.circle),
+                decoration: const BoxDecoration(
+                    color: Colors.black45, shape: BoxShape.circle),
                 child: IconButton(
-                  icon: const Icon(Icons.close_rounded, color: Colors.white, size: 26),
+                  icon: const Icon(Icons.close_rounded,
+                      color: Colors.white, size: 26),
                   onPressed: () => Navigator.pop(ctx),
                 ),
               ),
@@ -133,7 +139,10 @@ class _ImageMessageState extends State<ImageMessage> {
           );
         }
         if (!s.hasData) {
-          return box(context, const CircularProgressIndicator(strokeWidth: 2, color: AppColors.green));
+          return box(
+              context,
+              const CircularProgressIndicator(
+                  strokeWidth: 2, color: AppColors.green));
         }
         final bytes = s.data!;
         return GestureDetector(
@@ -144,9 +153,15 @@ class _ImageMessageState extends State<ImageMessage> {
               tag: 'img_${widget.groupId}_${widget.mediaId}',
               child: Container(
                 decoration: BoxDecoration(
-                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: .1), blurRadius: 8, offset: const Offset(0, 3))],
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black.withValues(alpha: .1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3))
+                  ],
                 ),
-                child: Image.memory(bytes, width: 230, fit: BoxFit.cover, gaplessPlayback: true),
+                child: Image.memory(bytes,
+                    width: 230, fit: BoxFit.cover, gaplessPlayback: true),
               ),
             ),
           ),
@@ -160,7 +175,8 @@ class _ImageMessageState extends State<ImageMessage> {
 List<double> _waveformFor(String seed) {
   // ارتفاعات ثابتة مشتقة من معرّف الرسالة، لتبدو كموجة صوتية حقيقية
   // بدون الحاجة لتحليل الملف الصوتي فعليًا.
-  final rnd = Random(seed.isEmpty ? 1 : seed.codeUnits.fold<int>(0, (a, b) => a + b));
+  final rnd =
+      Random(seed.isEmpty ? 1 : seed.codeUnits.fold<int>(0, (a, b) => a + b));
   return List.generate(28, (_) => 0.28 + rnd.nextDouble() * 0.72);
 }
 
@@ -236,8 +252,8 @@ class _VoiceMessageState extends State<VoiceMessage> {
     } catch (e) {
       if (mounted) {
         setState(() => _loading = false);
-        ScaffoldMessenger.of(context)
-            .showSnackBar(const SnackBar(content: Text('تعذر تشغيل الرسالة الصوتية')));
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('تعذر تشغيل الرسالة الصوتية')));
       }
     }
   }
@@ -255,7 +271,8 @@ class _VoiceMessageState extends State<VoiceMessage> {
   @override
   Widget build(BuildContext context) {
     final fg = widget.mine ? Colors.white : AppColors.green;
-    final track = widget.mine ? Colors.white38 : AppColors.green.withValues(alpha: .28);
+    final track =
+        widget.mine ? Colors.white38 : AppColors.green.withValues(alpha: .28);
     final total = widget.durationMs <= 0 ? 1 : widget.durationMs;
     final value = (_pos.inMilliseconds / total).clamp(0.0, 1.0);
     final playedBars = (value * _bars.length).round();
@@ -270,21 +287,32 @@ class _VoiceMessageState extends State<VoiceMessage> {
             height: 40,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: widget.mine ? Colors.white24 : softOf(context, AppColors.green, AppColors.softGreen),
+              color: widget.mine
+                  ? Colors.white24
+                  : softOf(context, AppColors.green, AppColors.softGreen),
               boxShadow: _playing
-                  ? [BoxShadow(color: fg.withValues(alpha: .35), blurRadius: 10, spreadRadius: 1)]
+                  ? [
+                      BoxShadow(
+                          color: fg.withValues(alpha: .35),
+                          blurRadius: 10,
+                          spreadRadius: 1)
+                    ]
                   : null,
             ),
             child: _loading
                 ? Padding(
                     padding: const EdgeInsets.all(11),
                     child: CircularProgressIndicator(strokeWidth: 2, color: fg))
-                : Icon(_playing ? Icons.pause_rounded : Icons.play_arrow_rounded, color: fg, size: 24),
+                : Icon(
+                    _playing ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                    color: fg,
+                    size: 24),
           ),
         ),
         const SizedBox(width: 8),
         Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             SizedBox(
               height: 24,
               child: Row(
@@ -306,8 +334,12 @@ class _VoiceMessageState extends State<VoiceMessage> {
             ),
             const SizedBox(height: 4),
             Text(
-              _playing || _pos > Duration.zero ? _fmt(_pos.inMilliseconds) : _fmt(widget.durationMs),
-              style: TextStyle(fontSize: 11, color: widget.mine ? Colors.white70 : mutedOf(context)),
+              _playing || _pos > Duration.zero
+                  ? _fmt(_pos.inMilliseconds)
+                  : _fmt(widget.durationMs),
+              style: TextStyle(
+                  fontSize: 11,
+                  color: widget.mine ? Colors.white70 : mutedOf(context)),
             ),
           ]),
         ),
@@ -335,7 +367,8 @@ class _ImagePreviewSheetState extends State<_ImagePreviewSheet> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.fromLTRB(16, 0, 16, 16 + MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.fromLTRB(
+          16, 0, 16, 16 + MediaQuery.of(context).viewInsets.bottom),
       child: Column(mainAxisSize: MainAxisSize.min, children: [
         ClipRRect(
           borderRadius: BorderRadius.circular(18),
@@ -352,8 +385,10 @@ class _ImagePreviewSheetState extends State<_ImagePreviewSheet> {
             hintText: 'أضف تعليقًا (اختياري)',
             counterText: '',
             filled: true,
-            fillColor: isDark(context) ? Colors.white10 : const Color(0xFFF3F5F3),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+            fillColor: isDark(context) ? Colors.white10 : RifqaChat.paper,
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide.none),
           ),
         ),
         const SizedBox(height: 10),
@@ -363,8 +398,14 @@ class _ImagePreviewSheetState extends State<_ImagePreviewSheet> {
           child: DecoratedBox(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              gradient: const LinearGradient(colors: [AppColors.green, AppColors.greenDark]),
-              boxShadow: [BoxShadow(color: AppColors.green.withValues(alpha: .3), blurRadius: 10, offset: const Offset(0, 4))],
+              gradient: const LinearGradient(
+                  colors: [AppColors.green, AppColors.greenDark]),
+              boxShadow: [
+                BoxShadow(
+                    color: AppColors.green.withValues(alpha: .3),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4))
+              ],
             ),
             child: Material(
               color: Colors.transparent,
@@ -372,11 +413,16 @@ class _ImagePreviewSheetState extends State<_ImagePreviewSheet> {
                 borderRadius: BorderRadius.circular(16),
                 onTap: () => Navigator.pop(context, c.text),
                 child: const Center(
-                  child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                    Icon(Icons.send_rounded, color: Colors.white),
-                    SizedBox(width: 8),
-                    Text('إرسال الصورة', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
-                  ]),
+                  child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.send_rounded, color: Colors.white),
+                        SizedBox(width: 8),
+                        Text('إرسال الصورة',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w700)),
+                      ]),
                 ),
               ),
             ),
@@ -423,10 +469,38 @@ class _ChatInputBarState extends State<ChatInputBar> {
 
   static const _maxSeconds = 60;
   static const _emojis = [
-    '😀', '😃', '😄', '😁', '😆', '😊', '🥰', '😍',
-    '😘', '😋', '😎', '🤗', '🤔', '😭', '😂', '🤣',
-    '🙂', '🙃', '😉', '😇', '🙏', '🤲', '💚', '❤️',
-    '👍', '👏', '✨', '🌹', '🕋', '🤍', '💐', '🌙',
+    '😀',
+    '😃',
+    '😄',
+    '😁',
+    '😆',
+    '😊',
+    '🥰',
+    '😍',
+    '😘',
+    '😋',
+    '😎',
+    '🤗',
+    '🤔',
+    '😭',
+    '😂',
+    '🤣',
+    '🙂',
+    '🙃',
+    '😉',
+    '😇',
+    '🙏',
+    '🤲',
+    '💚',
+    '❤️',
+    '👍',
+    '👏',
+    '✨',
+    '🌹',
+    '🕋',
+    '🤍',
+    '💐',
+    '🌙',
   ];
 
   @override
@@ -481,7 +555,8 @@ class _ChatInputBarState extends State<ChatInputBar> {
     if (emoji == null) return;
 
     final value = widget.controller.value;
-    final start = value.selection.start < 0 ? value.text.length : value.selection.start;
+    final start =
+        value.selection.start < 0 ? value.text.length : value.selection.start;
     final end = value.selection.end < 0 ? start : value.selection.end;
     final text = value.text.replaceRange(start, end, emoji);
     widget.controller.value = TextEditingValue(
@@ -503,9 +578,11 @@ class _ChatInputBarState extends State<ChatInputBar> {
               decoration: BoxDecoration(
                   color: softOf(ctx, AppColors.green, AppColors.softGreen),
                   borderRadius: BorderRadius.circular(12)),
-              child: const Icon(Icons.photo_camera_outlined, color: AppColors.green),
+              child: const Icon(Icons.photo_camera_outlined,
+                  color: AppColors.green),
             ),
-            title: const Text('التقاط صورة', style: TextStyle(fontWeight: FontWeight.w700)),
+            title: const Text('التقاط صورة',
+                style: TextStyle(fontWeight: FontWeight.w700)),
             onTap: () {
               Navigator.pop(ctx);
               _pickImage(ImageSource.camera);
@@ -517,9 +594,11 @@ class _ChatInputBarState extends State<ChatInputBar> {
               decoration: BoxDecoration(
                   color: softOf(ctx, AppColors.green, AppColors.softGreen),
                   borderRadius: BorderRadius.circular(12)),
-              child: const Icon(Icons.photo_library_outlined, color: AppColors.green),
+              child: const Icon(Icons.photo_library_outlined,
+                  color: AppColors.green),
             ),
-            title: const Text('اختيار من المعرض', style: TextStyle(fontWeight: FontWeight.w700)),
+            title: const Text('اختيار من المعرض',
+                style: TextStyle(fontWeight: FontWeight.w700)),
             onTap: () {
               Navigator.pop(ctx);
               _pickImage(ImageSource.gallery);
@@ -560,10 +639,14 @@ class _ChatInputBarState extends State<ChatInputBar> {
         return;
       }
       final dir = await getTemporaryDirectory();
-      final path = '${dir.path}/rec_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      final path =
+          '${dir.path}/rec_${DateTime.now().millisecondsSinceEpoch}.m4a';
       await _recorder.start(
         const RecordConfig(
-            encoder: AudioEncoder.aacLc, bitRate: 24000, sampleRate: 16000, numChannels: 1),
+            encoder: AudioEncoder.aacLc,
+            bitRate: 24000,
+            sampleRate: 16000,
+            numChannels: 1),
         path: path,
       );
       _path = path;
@@ -587,7 +670,8 @@ class _ChatInputBarState extends State<ChatInputBar> {
     try {
       final stopped = await _recorder.stop();
       final path = stopped ?? _path;
-      final ms = DateTime.now().difference(_started ?? DateTime.now()).inMilliseconds;
+      final ms =
+          DateTime.now().difference(_started ?? DateTime.now()).inMilliseconds;
       if (mounted) setState(() => _recording = false);
       if (path == null) return;
       final file = File(path);
@@ -612,17 +696,29 @@ class _ChatInputBarState extends State<ChatInputBar> {
   }
 
   // ---- ui
-  Widget _circleButton({required IconData icon, required VoidCallback? onTap, Color? color, double size = 46}) {
+  Widget _circleButton(
+      {required IconData icon,
+      required VoidCallback? onTap,
+      Color? color,
+      double size = 46}) {
     return DecoratedBox(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: onTap == null
             ? null
-            : LinearGradient(colors: [color ?? AppColors.green, (color ?? AppColors.green).withValues(alpha: .8)]),
+            : LinearGradient(colors: [
+                color ?? AppColors.green,
+                (color ?? AppColors.green).withValues(alpha: .8)
+              ]),
         color: onTap == null ? Colors.grey : null,
         boxShadow: onTap == null
             ? null
-            : [BoxShadow(color: (color ?? AppColors.green).withValues(alpha: .35), blurRadius: 10, offset: const Offset(0, 4))],
+            : [
+                BoxShadow(
+                    color: (color ?? AppColors.green).withValues(alpha: .35),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4))
+              ],
       ),
       child: Material(
         color: Colors.transparent,
@@ -649,7 +745,8 @@ class _ChatInputBarState extends State<ChatInputBar> {
           IconButton(
             tooltip: 'إلغاء',
             onPressed: () => _finishRecording(send: false),
-            icon: const Icon(Icons.delete_outline_rounded, color: AppColors.red),
+            icon:
+                const Icon(Icons.delete_outline_rounded, color: AppColors.red),
           ),
           Expanded(
             child: Container(
@@ -662,7 +759,8 @@ class _ChatInputBarState extends State<ChatInputBar> {
                 const PulseDot(color: AppColors.red, size: 10),
                 const SizedBox(width: 10),
                 Text('جاري التسجيل  ${_fmt(_seconds * 1000)}',
-                    style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.red)),
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w800, color: AppColors.red)),
                 const Spacer(),
                 Text('الحد $_maxSecondsث',
                     style: TextStyle(fontSize: 11, color: mutedOf(context))),
@@ -670,7 +768,9 @@ class _ChatInputBarState extends State<ChatInputBar> {
             ),
           ),
           const SizedBox(width: 8),
-          _circleButton(icon: Icons.send_rounded, onTap: () => _finishRecording(send: true)),
+          _circleButton(
+              icon: Icons.send_rounded,
+              onTap: () => _finishRecording(send: true)),
         ]),
       );
     }
@@ -683,7 +783,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
         _circleButton(
           icon: Icons.add_rounded,
           onTap: disabled ? null : _attachSheet,
-          color: isDark(context) ? Colors.white24 : const Color(0xFFBFC6C2),
+          color: isDark(context) ? Colors.white24 : RifqaChat.emerald,
           size: 42,
         ),
         const SizedBox(width: 8),
@@ -691,7 +791,7 @@ class _ChatInputBarState extends State<ChatInputBar> {
           child: Container(
             constraints: const BoxConstraints(minHeight: 44),
             decoration: BoxDecoration(
-              color: isDark(context) ? Colors.white10 : const Color(0xFFF3F5F3),
+              color: isDark(context) ? Colors.white10 : RifqaChat.paper,
               borderRadius: BorderRadius.circular(24),
             ),
             child: Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
@@ -705,7 +805,8 @@ class _ChatInputBarState extends State<ChatInputBar> {
                     hintText: 'اكتب رسالة...',
                     counterText: '',
                     isDense: true,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    contentPadding:
+                        EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     border: InputBorder.none,
                   ),
                 ),
@@ -713,7 +814,8 @@ class _ChatInputBarState extends State<ChatInputBar> {
               IconButton(
                 tooltip: 'إيموجي',
                 onPressed: disabled ? null : _pickEmoji,
-                icon: const Icon(Icons.emoji_emotions_outlined, color: AppColors.green, size: 21),
+                icon: const Icon(Icons.emoji_emotions_outlined,
+                    color: AppColors.green, size: 21),
               ),
             ]),
           ),
@@ -725,7 +827,8 @@ class _ChatInputBarState extends State<ChatInputBar> {
             height: 46,
             child: Padding(
               padding: EdgeInsets.all(12),
-              child: CircularProgressIndicator(strokeWidth: 2.5, color: AppColors.green),
+              child: CircularProgressIndicator(
+                  strokeWidth: 2.5, color: AppColors.green),
             ),
           )
         else
@@ -735,7 +838,9 @@ class _ChatInputBarState extends State<ChatInputBar> {
               final hasText = v.text.trim().isNotEmpty;
               return _circleButton(
                 icon: hasText ? Icons.send_rounded : Icons.mic_rounded,
-                onTap: widget.busy ? null : (hasText ? _sendText : _startRecording),
+                onTap: widget.busy
+                    ? null
+                    : (hasText ? _sendText : _startRecording),
               );
             },
           ),

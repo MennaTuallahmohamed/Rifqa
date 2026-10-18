@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/theme/app_colors.dart';
 import 'umrah_data.dart';
+import 'umrah_premium.dart';
 
 /// هيكل مشترك لصفحات الأدوات
 class UToolPage extends StatelessWidget {
@@ -13,15 +14,30 @@ class UToolPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: UC.ivory,
+      backgroundColor: UGold.cream,
       appBar: AppBar(
-        backgroundColor: AppColors.green,
+        backgroundColor: UGold.deep,
         foregroundColor: Colors.white,
         elevation: 0,
         title: Text(title,
             style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 18)),
       ),
-      body: body,
+      body: Column(children: [
+        SizedBox(
+            height: 108,
+            width: double.infinity,
+            child: Stack(fit: StackFit.expand, children: [
+              const UPhoto(asset: 'assets/umrah/umrah_hero.jpg'),
+              Container(color: UGold.deep.withOpacity(.55)),
+              Center(
+                  child: Text(title,
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 23))),
+            ])),
+        Expanded(child: body),
+      ]),
     );
   }
 }

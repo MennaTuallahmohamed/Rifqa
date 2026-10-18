@@ -5,10 +5,10 @@ import '../services/groups/group_service.dart';
 import '../core/theme/app_colors.dart';
 
 import 'home/home_screen.dart';
-import 'lost/lost_screen.dart';
+import 'assistant/lost_help_screen.dart';
 import 'groups/groups_screen.dart';
-import 'services/service_screen.dart';
 import 'assistant/ask_rifqa_screen.dart';
+import 'profile/rifqa_profile_screen.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -47,7 +47,7 @@ class _AppShellState extends State<AppShell> {
 
       case 1:
         // We still need the actual Umrah guide screen route.
-        // Never redirect to LostScreen by mistake.
+        // Do not confuse the Umrah guide with the lost-help tab.
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
@@ -150,14 +150,11 @@ class _AppShellState extends State<AppShell> {
         open: _handleHomeNavigation,
       ),
 
-      const LostScreen(),
+      const LostHelpScreen(),
 
       const GroupsScreen(),
 
-      const ServiceScreen(
-        code: -9,
-        embedded: true,
-      ),
+      const RifqaProfileScreen(),
 
       AskRifqaScreen(
         onShareLocationWithGroup: _shareLocationWithGroup,

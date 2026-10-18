@@ -1,264 +1,161 @@
 import 'package:flutter/material.dart';
-
 import '../../models/dua_model.dart';
 import '../../services/duas/duas_repository.dart';
+import 'dua_premium_theme.dart';
 
 class AddDuaScreen extends StatefulWidget {
-  const AddDuaScreen({
-    super.key,
-    required this.repository,
-    this.dua,
-  });
-
+  const AddDuaScreen({super.key, required this.repository, this.dua});
   final DuasRepository repository;
-
   final Dua? dua;
-
   @override
   State<AddDuaScreen> createState() => _AddDuaScreenState();
 }
 
 class _AddDuaScreenState extends State<AddDuaScreen> {
-  final _formKey = GlobalKey<FormState>();
-
-  late final TextEditingController _titleController;
-
-  late final TextEditingController _textController;
-
+  final _form = GlobalKey<FormState>();
+  late final TextEditingController _title;
+  late final TextEditingController _body;
   late DuaCategory _category;
-
   bool _saving = false;
-
-  bool get editing => widget.dua != null;
-
   @override
   void initState() {
     super.initState();
-
-    _titleController = TextEditingController(
-      text: widget.dua?.title ?? '',
-    );
-
-    _textController = TextEditingController(
-      text: widget.dua?.arabicText ?? '',
-    );
-
+    _title = TextEditingController(text: widget.dua?.title ?? '');
+    _body = TextEditingController(text: widget.dua?.arabicText ?? '');
     _category = widget.dua?.category ?? DuaCategory.general;
   }
 
   @override
   void dispose() {
-    _titleController.dispose();
-    _textController.dispose();
-
+    _title.dispose();
+    _body.dispose();
     super.dispose();
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) {
-      return;
-    }
-
-    setState(() {
-      _saving = true;
-    });
-
+    if (!_form.currentState!.validate() || _saving) return;
+    setState(() => _saving = true);
     try {
-      if (editing) {
-        await widget.repository.updateUserDua(
-          widget.dua!.id,
-          title: _titleController.text,
-          arabicText: _textController.text,
-          category: _category,
-        );
-      } else {
+      if (widget.dua == null) {
         await widget.repository.addUserDua(
-          title: _titleController.text,
-          arabicText: _textController.text,
-          category: _category,
-        );
+            title: _title.text.trim(),
+            arabicText: _body.text.trim(),
+            category: _category);
+      } else {
+        await widget.repository.updateUserDua(widget.dua!.id,
+            title: _title.text.trim(),
+            arabicText: _body.text.trim(),
+            category: _category);
       }
-
-      if (!mounted) {
-        return;
-      }
-
-      Navigator.pop(
-        context,
-        true,
-      );
+      if (mounted) Navigator.pop(context, true);
+    } catch (_) {
+      if (mounted)
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('تعذّر الحفظ، حاولي مرة أخرى')));
     } finally {
-      if (mounted) {
-        setState(() {
-          _saving = false;
-        });
-      }
+      if (mounted) setState(() => _saving = false);
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text(
-            editing ? 'تعديل الدعاء' : 'إضافة دعاء',
-          ),
+  Widget build(BuildContext context) => Directionality(
+        textDirection: TextDirection.rtl,
+        child: Scaffold(
+          backgroundColor: DuaPremium.cream,
+          body: Form(
+              key: _form,
+              child: CustomScrollView(slivers: [
+                SliverToBoxAdapter(
+                    child: DuaPhotoHero(
+                        title: widget.dua == null
+                            ? 'دعاء من قلبك'
+                            : 'تعديل الدعاء',
+                        subtitle: 'سجّلي دعاءً يبقى معك في الرحلة',
+                        image: 'assets/duas/hero_detail.jpg',
+                        height: 237,
+                        onBack: () => Navigator.pop(context))),
+                SliverToBoxAdapter(
+                    child: Padding(
+                        padding: const EdgeInsets.fromLTRB(15, 15, 15, 26),
+                        child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Container(
+                                  padding: const EdgeInsets.all(14),
+                                  decoration: DuaPremium.card(),
+                                  child: Text(
+                                      'هذا دعاء شخصي، لا يظهر باعتباره نصًا مأثورًا أو حديثًا نبويًا.',
+                                      style: DuaPremium.type(11.5))),
+                              const SizedBox(height: 20),
+                              Text('عنوان الدعاء',
+                                  style: DuaPremium.type(14,
+                                      weight: FontWeight.w900)),
+                              const SizedBox(height: 7),
+                              TextFormField(
+                                  controller: _title,
+                                  style: DuaPremium.type(13),
+                                  decoration: _input('مثال: دعاء لأهلي',
+                                      Icons.edit_note_rounded),
+                                  validator: (v) =>
+                                      v == null || v.trim().isEmpty
+                                          ? 'اكتبي عنوانًا للدعاء'
+                                          : null),
+                              const SizedBox(height: 20),
+                              Text('نص الدعاء',
+                                  style: DuaPremium.type(14,
+                                      weight: FontWeight.w900)),
+                              const SizedBox(height: 7),
+                              TextFormField(
+                                  controller: _body,
+                                  minLines: 6,
+                                  maxLines: 13,
+                                  style: DuaPremium.type(14, height: 1.8),
+                                  decoration: _input('اكتبي دعاءك هنا...',
+                                      Icons.volunteer_activism_outlined),
+                                  validator: (v) =>
+                                      v == null || v.trim().isEmpty
+                                          ? 'اكتبي نص الدعاء'
+                                          : null),
+                              const SizedBox(height: 20),
+                              Text('التصنيف',
+                                  style: DuaPremium.type(14,
+                                      weight: FontWeight.w900)),
+                              const SizedBox(height: 9),
+                              Wrap(spacing: 8, runSpacing: 9, children: [
+                                for (final c in DuaCategory.values)
+                                  DuaPill(
+                                      label: '${c.emoji} ${c.label}',
+                                      selected: _category == c,
+                                      onTap: () =>
+                                          setState(() => _category = c)),
+                              ]),
+                              const SizedBox(height: 28),
+                              DuaPrimaryButton(
+                                  label: _saving
+                                      ? 'جارٍ الحفظ...'
+                                      : (widget.dua == null
+                                          ? 'احفظي في أدعيتك'
+                                          : 'حفظ التعديلات'),
+                                  onTap: _saving ? null : _save,
+                                  icon: Icons.bookmark_add_rounded),
+                            ]))),
+              ])),
         ),
-        body: SafeArea(
-          child: Form(
-            key: _formKey,
-            child: ListView(
-              padding: const EdgeInsets.all(
-                18,
-              ),
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(
-                      18,
-                    ),
-                  ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(
-                        Icons.auto_awesome_rounded,
-                      ),
-                      const SizedBox(
-                        width: 12,
-                      ),
-                      Expanded(
-                        child: Text(
-                          'اكتبي الدعاء الذي تريدين الاحتفاظ به. سيظهر داخل «أدعيتي» منفصلًا عن المحتوى الموثق.',
-                          style: theme.textTheme.bodyMedium,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(
-                  height: 24,
-                ),
-                TextFormField(
-                  controller: _titleController,
-                  decoration: InputDecoration(
-                    labelText: 'عنوان الدعاء',
-                    hintText: 'مثال: دعاء لأهلي',
-                    prefixIcon: const Icon(
-                      Icons.title_rounded,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(
-                        16,
-                      ),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'اكتبي عنوانًا للدعاء';
-                    }
-
-                    return null;
-                  },
-                ),
-                const SizedBox(
-                  height: 16,
-                ),
-                TextFormField(
-                  controller: _textController,
-                  minLines: 6,
-                  maxLines: 12,
-                  textAlign: TextAlign.right,
-                  decoration: InputDecoration(
-                    labelText: 'نص الدعاء',
-                    alignLabelWithHint: true,
-                    hintText: 'اكتبي دعاءك هنا...',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(
-                        16,
-                      ),
-                    ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'اكتبي نص الدعاء';
-                    }
-
-                    return null;
-                  },
-                ),
-                const SizedBox(
-                  height: 18,
-                ),
-                Text(
-                  'التصنيف',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(
-                  height: 10,
-                ),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: [
-                    for (final category in DuaCategory.values)
-                      ChoiceChip(
-                        label: Text(
-                          '${category.emoji} ${category.label}',
-                        ),
-                        selected: _category == category,
-                        onSelected: (_) {
-                          setState(() {
-                            _category = category;
-                          });
-                        },
-                      ),
-                  ],
-                ),
-                const SizedBox(
-                  height: 28,
-                ),
-                SizedBox(
-                  height: 54,
-                  child: FilledButton.icon(
-                    onPressed: _saving ? null : _save,
-                    icon: _saving
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                            ),
-                          )
-                        : const Icon(
-                            Icons.favorite_rounded,
-                          ),
-                    label: Text(
-                      editing ? 'حفظ التعديلات' : 'حفظ في أدعيتي',
-                    ),
-                  ),
-                ),
-                const SizedBox(
-                  height: 14,
-                ),
-                Text(
-                  'هذا المحتوى شخصي ولن يظهر باعتباره دعاءً موثقًا من القرآن أو السنة.',
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.bodySmall,
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+      );
+  InputDecoration _input(String hint, IconData icon) => InputDecoration(
+      filled: true,
+      fillColor: DuaPremium.paper,
+      hintText: hint,
+      hintStyle: DuaPremium.type(11, color: DuaPremium.muted),
+      prefixIcon: Icon(icon, color: DuaPremium.green),
+      contentPadding: const EdgeInsets.all(16),
+      border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(color: DuaPremium.line)),
+      enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(color: DuaPremium.line)),
+      focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(color: DuaPremium.green, width: 1.5)));
 }

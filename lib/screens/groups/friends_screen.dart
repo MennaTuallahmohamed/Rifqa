@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import '../../core/theme/app_colors.dart';
 import 'direct_chat_screen.dart';
+import 'rifqa_chat_theme.dart';
 import 'friend_service.dart';
 import 'groups_screen.dart'
     show
@@ -35,8 +36,8 @@ class FriendsEntryButton extends StatelessWidget {
         final n = snap.data?.docs.length ?? 0;
         return InkWell(
           borderRadius: BorderRadius.circular(22),
-          onTap: () => Navigator.push(
-              context, MaterialPageRoute(builder: (_) => const FriendsScreen())),
+          onTap: () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const FriendsScreen())),
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
@@ -45,19 +46,25 @@ class FriendsEntryButton extends StatelessWidget {
               border: Border.all(color: Colors.white24),
             ),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
-              const Icon(Icons.person_add_alt_1_rounded, color: Colors.white, size: 18),
+              const Icon(Icons.person_add_alt_1_rounded,
+                  color: Colors.white, size: 18),
               const SizedBox(width: 6),
               const Text('الأصدقاء',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800)),
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.w800)),
               if (n > 0) ...[
                 const SizedBox(width: 6),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                   decoration: BoxDecoration(
-                      color: AppColors.red, borderRadius: BorderRadius.circular(10)),
+                      color: AppColors.red,
+                      borderRadius: BorderRadius.circular(10)),
                   child: Text('$n',
                       style: const TextStyle(
-                          color: Colors.white, fontSize: 11, fontWeight: FontWeight.w800)),
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w800)),
                 ),
               ],
             ]),
@@ -76,7 +83,8 @@ class FriendsScreen extends StatefulWidget {
 
 enum _FriendsTab { all, requests }
 
-class _FriendsScreenState extends State<FriendsScreen> with BusyMixin<FriendsScreen> {
+class _FriendsScreenState extends State<FriendsScreen>
+    with BusyMixin<FriendsScreen> {
   final svc = FriendService.instance;
   final _searchController = TextEditingController();
   late Future<String> _code = svc.myCode();
@@ -95,7 +103,8 @@ class _FriendsScreenState extends State<FriendsScreen> with BusyMixin<FriendsScr
           showDragHandle: true,
           builder: (_) => const InputSheet(
             title: 'إضافة صديق بالكود',
-            subtitle: 'اطلب من صديقك كود الصداقة الخاص به (8 خانات) وأدخله هنا.',
+            subtitle:
+                'اطلب من صديقك كود الصداقة الخاص به (8 خانات) وأدخله هنا.',
             hint: 'كود الصديق',
             action: 'إرسال الطلب',
             icon: Icons.person_add_alt_1_outlined,
@@ -115,7 +124,9 @@ class _FriendsScreenState extends State<FriendsScreen> with BusyMixin<FriendsScr
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w800)),
         content: Text(body),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('إلغاء')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('إلغاء')),
           FilledButton(
               style: FilledButton.styleFrom(backgroundColor: AppColors.red),
               onPressed: () => Navigator.pop(ctx, true),
@@ -133,109 +144,142 @@ class _FriendsScreenState extends State<FriendsScreen> with BusyMixin<FriendsScr
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-            colors: [Color(0xFFC29B40), Color(0xFF9A7A2E)],
+            colors: [Color(0xFF064E3A), Color(0xFF022F27)],
             begin: Alignment.topRight,
             end: Alignment.bottomLeft),
         borderRadius: BorderRadius.circular(26),
-        boxShadow: [BoxShadow(color: const Color(0xFFC29B40).withValues(alpha: .32), blurRadius: 18, offset: const Offset(0, 8))],
+        boxShadow: [
+          BoxShadow(
+              color: const Color(0xFFC29B40).withValues(alpha: .32),
+              blurRadius: 18,
+              offset: const Offset(0, 8))
+        ],
       ),
-      child: FutureBuilder<String>(
-        future: _code,
-        builder: (context, s) {
-          Widget inner;
-          if (s.hasError) {
-            inner = Column(children: [
-              Text(friendlyError(s.error!),
-                  style: const TextStyle(color: Colors.white), textAlign: TextAlign.center),
-              TextButton(
-                onPressed: () => setState(() => _code = svc.myCode()),
-                child: const Text('إعادة المحاولة', style: TextStyle(color: Colors.white)),
-              ),
-            ]);
-          } else if (!s.hasData) {
-            inner = const Padding(
-              padding: EdgeInsets.all(20),
-              child: Center(child: CircularProgressIndicator(color: Colors.white)),
-            );
-          } else {
-            final code = s.data!;
-            inner = Column(children: [
-              DottedTicket(code: code, colors: const [Color(0xFFD4AE55), Color(0xFF8F701F)]),
-              const SizedBox(height: 14),
-              Row(children: [
-                Expanded(
-                  child: SizedBox(
-                    height: 48,
-                    child: OutlinedButton.icon(
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.white,
-                        side: const BorderSide(color: Colors.white70),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+      child: Stack(children: [
+        Positioned.fill(
+            child: ClipRRect(
+                borderRadius: BorderRadius.circular(22),
+                child: Opacity(
+                    opacity: .19,
+                    child: Image.asset('assets/images/rifqa_group_kaaba.jpg',
+                        fit: BoxFit.cover, alignment: Alignment.centerLeft)))),
+        FutureBuilder<String>(
+          future: _code,
+          builder: (context, s) {
+            Widget inner;
+            if (s.hasError) {
+              inner = Column(children: [
+                Text(friendlyError(s.error!),
+                    style: const TextStyle(color: Colors.white),
+                    textAlign: TextAlign.center),
+                TextButton(
+                  onPressed: () => setState(() => _code = svc.myCode()),
+                  child: const Text('إعادة المحاولة',
+                      style: TextStyle(color: Colors.white)),
+                ),
+              ]);
+            } else if (!s.hasData) {
+              inner = const Padding(
+                padding: EdgeInsets.all(20),
+                child: Center(
+                    child: CircularProgressIndicator(color: Colors.white)),
+              );
+            } else {
+              final code = s.data!;
+              inner = Column(children: [
+                DottedTicket(
+                    code: code,
+                    colors: const [Color(0xFF1C7051), Color(0xFF0A3B2F)]),
+                const SizedBox(height: 14),
+                Row(children: [
+                  Expanded(
+                    child: SizedBox(
+                      height: 48,
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side: const BorderSide(color: Colors.white70),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14)),
+                        ),
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: code));
+                          toast('تم نسخ كودك');
+                        },
+                        icon: const Icon(Icons.copy_rounded, size: 18),
+                        label: const Text('نسخ'),
                       ),
-                      onPressed: () {
-                        Clipboard.setData(ClipboardData(text: code));
-                        toast('تم نسخ كودك');
-                      },
-                      icon: const Icon(Icons.copy_rounded, size: 18),
-                      label: const Text('نسخ'),
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: SizedBox(
-                    height: 48,
-                    child: DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: SizedBox(
+                      height: 48,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          color: Colors.white,
                           borderRadius: BorderRadius.circular(14),
-                          onTap: () => Share.share('كود الصداقة الخاص بي في رِفقة: $code'),
-                          child: const Center(
-                            child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-                              Icon(Icons.ios_share_rounded, size: 18, color: Color(0xFF9A7A2E)),
-                              SizedBox(width: 8),
-                              Text('مشاركة',
-                                  style: TextStyle(color: Color(0xFF9A7A2E), fontWeight: FontWeight.w800)),
-                            ]),
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(14),
+                            onTap: () => Share.share(
+                                'كود الصداقة الخاص بي في رِفقة: $code'),
+                            child: const Center(
+                              child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.ios_share_rounded,
+                                        size: 18, color: Color(0xFF9A7A2E)),
+                                    SizedBox(width: 8),
+                                    Text('مشاركة',
+                                        style: TextStyle(
+                                            color: Color(0xFF9A7A2E),
+                                            fontWeight: FontWeight.w800)),
+                                  ]),
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
+                ]),
+              ]);
+            }
+            return Column(children: [
+              Row(children: [
+                Container(
+                  padding: const EdgeInsets.all(9),
+                  decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: .2),
+                      borderRadius: BorderRadius.circular(13)),
+                  child: const Icon(Icons.badge_outlined,
+                      color: Colors.white, size: 19),
+                ),
+                const SizedBox(width: 10),
+                const Expanded(
+                  child: Text('كود الصداقة الخاص بك',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 16)),
                 ),
               ]),
+              const SizedBox(height: 4),
+              Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: Text('شاركه مع من تحب ليضيفك صديقًا',
+                    style: TextStyle(
+                        color: Colors.white.withValues(alpha: .85),
+                        fontSize: 12.5)),
+              ),
+              const SizedBox(height: 14),
+              inner,
             ]);
-          }
-          return Column(children: [
-            Row(children: [
-              Container(
-                padding: const EdgeInsets.all(9),
-                decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: .2), borderRadius: BorderRadius.circular(13)),
-                child: const Icon(Icons.badge_outlined, color: Colors.white, size: 19),
-              ),
-              const SizedBox(width: 10),
-              const Expanded(
-                child: Text('كود الصداقة الخاص بك',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
-              ),
-            ]),
-            const SizedBox(height: 4),
-            Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: Text('شاركه مع من تحب ليضيفك صديقًا',
-                  style: TextStyle(color: Colors.white.withValues(alpha: .85), fontSize: 12.5)),
-            ),
-            const SizedBox(height: 14),
-            inner,
-          ]);
-        },
-      ),
+          },
+        ),
+      ]),
     );
   }
 
@@ -257,7 +301,8 @@ class _FriendsScreenState extends State<FriendsScreen> with BusyMixin<FriendsScr
                   color: selected ? AppColors.green : Colors.transparent,
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Row(mainAxisAlignment: MainAxisAlignment.center, children: [
+                child:
+                    Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                   Text(label,
                       style: TextStyle(
                           fontWeight: FontWeight.w800,
@@ -266,7 +311,8 @@ class _FriendsScreenState extends State<FriendsScreen> with BusyMixin<FriendsScr
                   if (badge != null && badge > 0) ...[
                     const SizedBox(width: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 6, vertical: 1),
                       decoration: BoxDecoration(
                         color: selected ? Colors.white : AppColors.red,
                         borderRadius: BorderRadius.circular(10),
@@ -275,7 +321,8 @@ class _FriendsScreenState extends State<FriendsScreen> with BusyMixin<FriendsScr
                           style: TextStyle(
                               fontSize: 10.5,
                               fontWeight: FontWeight.w800,
-                              color: selected ? AppColors.green : Colors.white)),
+                              color:
+                                  selected ? AppColors.green : Colors.white)),
                     ),
                   ],
                 ]),
@@ -303,9 +350,15 @@ class _FriendsScreenState extends State<FriendsScreen> with BusyMixin<FriendsScr
   Widget sectionTitle(String text, int count, {IconData? icon}) => Padding(
         padding: const EdgeInsets.fromLTRB(20, 18, 20, 8),
         child: Row(children: [
-          if (icon != null) ...[Icon(icon, size: 17, color: mutedOf(context)), const SizedBox(width: 6)],
+          if (icon != null) ...[
+            Icon(icon, size: 17, color: mutedOf(context)),
+            const SizedBox(width: 6)
+          ],
           Text(text,
-              style: TextStyle(fontSize: 15.5, fontWeight: FontWeight.w800, color: inkOf(context))),
+              style: TextStyle(
+                  fontSize: 15.5,
+                  fontWeight: FontWeight.w800,
+                  color: inkOf(context))),
           const SizedBox(width: 8),
           if (count > 0)
             Container(
@@ -315,7 +368,9 @@ class _FriendsScreenState extends State<FriendsScreen> with BusyMixin<FriendsScr
                   borderRadius: BorderRadius.circular(10)),
               child: Text('$count',
                   style: const TextStyle(
-                      color: AppColors.green, fontWeight: FontWeight.w800, fontSize: 12)),
+                      color: AppColors.green,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12)),
             ),
         ]),
       );
@@ -336,20 +391,30 @@ class _FriendsScreenState extends State<FriendsScreen> with BusyMixin<FriendsScr
         borderRadius: BorderRadius.circular(18),
         boxShadow: [
           BoxShadow(
-            color: isDark(context) ? Colors.black.withValues(alpha: .22) : Colors.black.withValues(alpha: .05),
+            color: isDark(context)
+                ? Colors.black.withValues(alpha: .22)
+                : Colors.black.withValues(alpha: .05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
         ],
       ),
       child: Row(children: [
-        GroupAvatar(name, size: 46),
+        RifqaPhotoAvatar(
+            size: 46, variant: name.runes.fold<int>(0, (a, b) => a + b) % 5),
         const SizedBox(width: 12),
         Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(name, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: inkOf(context))),
+          child:
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(name,
+                style: TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 15,
+                    color: inkOf(context))),
             const SizedBox(height: 2),
-            Text(subtitle, style: TextStyle(fontSize: 12.5, color: subtitleColor ?? mutedOf(context))),
+            Text(subtitle,
+                style: TextStyle(
+                    fontSize: 12.5, color: subtitleColor ?? mutedOf(context))),
           ]),
         ),
         trailing,
@@ -373,7 +438,8 @@ class _FriendsScreenState extends State<FriendsScreen> with BusyMixin<FriendsScr
           );
         }
         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          sectionTitle('طلبات صداقة جديدة', docs.length, icon: Icons.inbox_outlined),
+          sectionTitle('طلبات صداقة جديدة', docs.length,
+              icon: Icons.inbox_outlined),
           ...docs.asMap().entries.map((entry) {
             final i = entry.key;
             final d = entry.value;
@@ -393,10 +459,13 @@ class _FriendsScreenState extends State<FriendsScreen> with BusyMixin<FriendsScr
                     shape: const CircleBorder(),
                     child: InkWell(
                       customBorder: const CircleBorder(),
-                      onTap: busy ? null : () => run(() => svc.deleteRequest(d.id)),
+                      onTap: busy
+                          ? null
+                          : () => run(() => svc.deleteRequest(d.id)),
                       child: const Padding(
                         padding: EdgeInsets.all(9),
-                        child: Icon(Icons.close_rounded, color: AppColors.red, size: 19),
+                        child: Icon(Icons.close_rounded,
+                            color: AppColors.red, size: 19),
                       ),
                     ),
                   ),
@@ -404,8 +473,14 @@ class _FriendsScreenState extends State<FriendsScreen> with BusyMixin<FriendsScr
                   DecoratedBox(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      gradient: const LinearGradient(colors: [AppColors.green, AppColors.greenDark]),
-                      boxShadow: [BoxShadow(color: AppColors.green.withValues(alpha: .35), blurRadius: 8, offset: const Offset(0, 3))],
+                      gradient: const LinearGradient(
+                          colors: [AppColors.green, AppColors.greenDark]),
+                      boxShadow: [
+                        BoxShadow(
+                            color: AppColors.green.withValues(alpha: .35),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3))
+                      ],
                     ),
                     child: Material(
                       color: Colors.transparent,
@@ -420,7 +495,8 @@ class _FriendsScreenState extends State<FriendsScreen> with BusyMixin<FriendsScr
                                 }),
                         child: const Padding(
                           padding: EdgeInsets.all(9),
-                          child: Icon(Icons.check_rounded, color: Colors.white, size: 19),
+                          child: Icon(Icons.check_rounded,
+                              color: Colors.white, size: 19),
                         ),
                       ),
                     ),
@@ -441,7 +517,8 @@ class _FriendsScreenState extends State<FriendsScreen> with BusyMixin<FriendsScr
         final docs = snap.data?.docs ?? const [];
         if (docs.isEmpty) return const SizedBox.shrink();
         return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          sectionTitle('طلبات أرسلتها', docs.length, icon: Icons.schedule_send_outlined),
+          sectionTitle('طلبات أرسلتها', docs.length,
+              icon: Icons.schedule_send_outlined),
           ...docs.asMap().entries.map((entry) {
             final i = entry.key;
             final d = entry.value;
@@ -453,9 +530,11 @@ class _FriendsScreenState extends State<FriendsScreen> with BusyMixin<FriendsScr
                 name: name,
                 subtitle: 'بانتظار القبول',
                 trailing: TextButton(
-                  onPressed: busy ? null : () => run(() => svc.deleteRequest(d.id)),
+                  onPressed:
+                      busy ? null : () => run(() => svc.deleteRequest(d.id)),
                   style: TextButton.styleFrom(foregroundColor: AppColors.red),
-                  child: const Text('إلغاء', style: TextStyle(fontWeight: FontWeight.w700)),
+                  child: const Text('إلغاء',
+                      style: TextStyle(fontWeight: FontWeight.w700)),
                 ),
               ),
             );
@@ -484,7 +563,8 @@ class _FriendsScreenState extends State<FriendsScreen> with BusyMixin<FriendsScr
               suffixIcon: _searchController.text.isEmpty
                   ? null
                   : IconButton(
-                      icon: Icon(Icons.close_rounded, size: 18, color: mutedOf(context)),
+                      icon: Icon(Icons.close_rounded,
+                          size: 18, color: mutedOf(context)),
                       onPressed: () => setState(_searchController.clear),
                     ),
               border: InputBorder.none,
@@ -501,13 +581,15 @@ class _FriendsScreenState extends State<FriendsScreen> with BusyMixin<FriendsScr
         if (snap.hasError) {
           return Padding(
             padding: const EdgeInsets.all(24),
-            child: Text(friendlyError(snap.error!), textAlign: TextAlign.center),
+            child:
+                Text(friendlyError(snap.error!), textAlign: TextAlign.center),
           );
         }
         if (!snap.hasData) {
           return const Padding(
             padding: EdgeInsets.all(32),
-            child: Center(child: CircularProgressIndicator(color: AppColors.green)),
+            child: Center(
+                child: CircularProgressIndicator(color: AppColors.green)),
           );
         }
         final docs = snap.data!.docs;
@@ -525,7 +607,8 @@ class _FriendsScreenState extends State<FriendsScreen> with BusyMixin<FriendsScr
               child: StateView(
                 icon: Icons.diversity_1_rounded,
                 title: 'لسه مفيش أصدقاء',
-                message: 'شارك كودك مع من تحب، أو أدخل كود صديق لإرسال طلب صداقة.',
+                message:
+                    'شارك كودك مع من تحب، أو أدخل كود صديق لإرسال طلب صداقة.',
               ),
             )
           else if (filteredDocs.isEmpty)
@@ -541,13 +624,17 @@ class _FriendsScreenState extends State<FriendsScreen> with BusyMixin<FriendsScr
               return FadeSlideIn(
                 index: i,
                 child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  margin:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
                   decoration: BoxDecoration(
-                    color: surfaceOf(context),
-                    borderRadius: BorderRadius.circular(18),
+                    color: RifqaChat.paper,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(color: RifqaChat.border),
                     boxShadow: [
                       BoxShadow(
-                        color: isDark(context) ? Colors.black.withValues(alpha: .22) : Colors.black.withValues(alpha: .05),
+                        color: isDark(context)
+                            ? Colors.black.withValues(alpha: .22)
+                            : Colors.black.withValues(alpha: .05),
                         blurRadius: 10,
                         offset: const Offset(0, 4),
                       ),
@@ -560,58 +647,82 @@ class _FriendsScreenState extends State<FriendsScreen> with BusyMixin<FriendsScr
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute<void>(
-                          builder: (_) => DirectChatScreen(friendUid: d.id, friendName: name),
+                          builder: (_) => DirectChatScreen(
+                              friendUid: d.id, friendName: name),
                         ),
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(10),
                         child: Row(children: [
                           Stack(children: [
-                            GroupAvatar(name, size: 48),
+                            RifqaPhotoAvatar(
+                                size: 48,
+                                variant:
+                                    name.runes.fold<int>(0, (a, b) => a + b) %
+                                        5),
                             Positioned(
                               bottom: 0,
                               right: 0,
                               child: Container(
                                 padding: const EdgeInsets.all(2),
-                                decoration: BoxDecoration(color: surfaceOf(context), shape: BoxShape.circle),
-                                child: const PulseDot(color: AppColors.green, size: 10),
+                                decoration: BoxDecoration(
+                                    color: surfaceOf(context),
+                                    shape: BoxShape.circle),
+                                child: const PulseDot(
+                                    color: AppColors.green, size: 10),
                               ),
                             ),
                           ]),
                           const SizedBox(width: 12),
                           Expanded(
-                            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                              Text(name, style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: inkOf(context))),
-                              const SizedBox(height: 2),
-                              Text('صديق', style: TextStyle(color: mutedOf(context), fontSize: 12.5)),
-                            ]),
+                            child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(name,
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 15,
+                                          color: inkOf(context))),
+                                  const SizedBox(height: 2),
+                                  Text('صديق',
+                                      style: TextStyle(
+                                          color: mutedOf(context),
+                                          fontSize: 12.5)),
+                                ]),
                           ),
                           Material(
-                            color: softOf(context, AppColors.green, AppColors.softGreen),
+                            color: softOf(
+                                context, AppColors.green, AppColors.softGreen),
                             shape: const CircleBorder(),
                             child: InkWell(
                               customBorder: const CircleBorder(),
                               onTap: () => Navigator.push(
                                 context,
                                 MaterialPageRoute<void>(
-                                  builder: (_) => DirectChatScreen(friendUid: d.id, friendName: name),
+                                  builder: (_) => DirectChatScreen(
+                                      friendUid: d.id, friendName: name),
                                 ),
                               ),
                               child: const Padding(
                                 padding: EdgeInsets.all(9),
-                                child: Icon(Icons.chat_bubble_outline_rounded, color: AppColors.green, size: 20),
+                                child: Icon(Icons.chat_bubble_outline_rounded,
+                                    color: AppColors.green, size: 20),
                               ),
                             ),
                           ),
                           const SizedBox(width: 2),
                           PopupMenuButton<String>(
                             enabled: !busy,
-                            icon: Icon(Icons.more_vert_rounded, color: mutedOf(context)),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                            icon: Icon(Icons.more_vert_rounded,
+                                color: mutedOf(context)),
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(14)),
                             onSelected: (v) async {
                               if (v == 'remove' &&
-                                  await confirm('إزالة الصديق؟',
-                                      'سيتم إزالتك من قائمة $name وإزالته من قائمتك.', 'إزالة')) {
+                                  await confirm(
+                                      'إزالة الصديق؟',
+                                      'سيتم إزالتك من قائمة $name وإزالته من قائمتك.',
+                                      'إزالة')) {
                                 await run(() => svc.removeFriend(d.id));
                               }
                             },
@@ -619,8 +730,12 @@ class _FriendsScreenState extends State<FriendsScreen> with BusyMixin<FriendsScr
                               PopupMenuItem(
                                   value: 'remove',
                                   child: ListTile(
-                                      leading: Icon(Icons.person_remove_outlined, color: AppColors.red),
-                                      title: Text('إزالة من الأصدقاء', style: TextStyle(color: AppColors.red)),
+                                      leading: Icon(
+                                          Icons.person_remove_outlined,
+                                          color: AppColors.red),
+                                      title: Text('إزالة من الأصدقاء',
+                                          style:
+                                              TextStyle(color: AppColors.red)),
                                       contentPadding: EdgeInsets.zero)),
                             ],
                           ),
@@ -639,18 +754,26 @@ class _FriendsScreenState extends State<FriendsScreen> with BusyMixin<FriendsScr
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: scaffoldOf(context),
+      backgroundColor: RifqaChat.ivory,
       appBar: AppBar(
-        backgroundColor: AppColors.green,
+        backgroundColor: RifqaChat.deep,
         foregroundColor: Colors.white,
         elevation: 0,
-        title: const Text('الأصدقاء', style: TextStyle(fontWeight: FontWeight.w800)),
+        centerTitle: true,
+        title: const Text('أصدقائي',
+            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 20)),
       ),
       floatingActionButton: DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(28),
-          gradient: const LinearGradient(colors: [AppColors.green, AppColors.greenDark]),
-          boxShadow: [BoxShadow(color: AppColors.green.withValues(alpha: .4), blurRadius: 14, offset: const Offset(0, 6))],
+          gradient: const LinearGradient(
+              colors: [AppColors.green, AppColors.greenDark]),
+          boxShadow: [
+            BoxShadow(
+                color: AppColors.green.withValues(alpha: .4),
+                blurRadius: 14,
+                offset: const Offset(0, 6))
+          ],
         ),
         child: Material(
           color: Colors.transparent,
@@ -663,7 +786,9 @@ class _FriendsScreenState extends State<FriendsScreen> with BusyMixin<FriendsScr
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 Icon(Icons.person_add_alt_1_rounded, color: Colors.white),
                 SizedBox(width: 8),
-                Text('إضافة بالكود', style: TextStyle(fontWeight: FontWeight.w800, color: Colors.white)),
+                Text('إضافة بالكود',
+                    style: TextStyle(
+                        fontWeight: FontWeight.w800, color: Colors.white)),
               ]),
             ),
           ),

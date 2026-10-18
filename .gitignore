@@ -43,3 +43,10 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+_madinah_install/
+madinah-backups/
+*.zip
+.env
+.env.*
+*serviceAccountKey*.json
+*firebase-adminsdk*.json
