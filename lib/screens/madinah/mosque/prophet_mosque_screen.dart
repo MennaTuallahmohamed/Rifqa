@@ -6,6 +6,7 @@ import '../../../services/madinah/madinah_repository.dart';
 import '../madinah_ui.dart';
 import '../salawat/salawat_library_screen.dart';
 import '../stories/prophetic_stories_screen.dart';
+import 'mosque_grandeur_experience.dart';
 import 'mosque_prepare_screen.dart';
 import 'mosque_reflection_screen.dart';
 import 'mosque_sanctuary_screen.dart';
@@ -81,6 +82,12 @@ class _ProphetMosqueScreenState extends State<ProphetMosqueScreen> {
             ProphetMosqueStage.completed,
             MosqueReflectionScreen(repository: widget.repository),
           ),
+        ),
+        MCard(
+          title: 'استشعار عظمة المكان · 3D',
+          subtitle: 'مشاهد سينمائية هادئة ونموذج معماري ثلاثي الأبعاد',
+          emoji: '✨',
+          onTap: () => go(context, const MosqueGrandeurExperience()),
         ),
         const MSection('من هنا ﷺ'),
         MCard(

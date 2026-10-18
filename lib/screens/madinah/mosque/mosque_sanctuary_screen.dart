@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../../../services/madinah/madinah_repository.dart';
+import 'mosque_grandeur_experience.dart';
 import '../madinah_ui.dart';
 
 class MosqueSanctuaryScreen extends StatefulWidget {
@@ -46,7 +47,18 @@ class _MosqueSanctuaryScreenState extends State<MosqueSanctuaryScreen> {
               height: 1.8,
             ),
           ),
-          const SizedBox(height: 70),
+          const SizedBox(height: 22),
+          FilledButton.icon(
+            onPressed: () => go(context, const MosqueGrandeurExperience()),
+            icon: const Icon(Icons.view_in_ar_rounded),
+            label: const Text('استشعري عظمة المكان · 3D'),
+            style: FilledButton.styleFrom(
+              backgroundColor: gold,
+              foregroundColor: emeraldDark,
+            ),
+          ),
+          const SizedBox(height: 40),
+
           OutlinedButton(
             onPressed: () => Navigator.pop(context),
             style: OutlinedButton.styleFrom(foregroundColor: Colors.white),

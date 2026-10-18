@@ -50,3 +50,14 @@ madinah-backups/
 .env.*
 *serviceAccountKey*.json
 *firebase-adminsdk*.json
+.env
+.env.*
+*.zip
+*.jks
+*.keystore
+*.p12
+*.pem
+*.p8
+key.properties
+*serviceAccount*.json
+*firebase-adminsdk*.json
