@@ -1,0 +1,418 @@
+import 'dart:convert';
+import 'dart:math' as math;
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_tts/flutter_tts.dart';
+import 'cinematic_theme.dart';
+
+class SeerahStory {
+  const SeerahStory({required this.id, required this.title, required this.summary,
+    required this.source, required this.category, required this.cover});
+  final int id;
+  final String title, summary, source, category, cover;
+
+  factory SeerahStory.fromJson(Map<String, dynamic> data) => SeerahStory(
+    id: data['id'] as int,
+    title: data['title'] as String,
+    summary: data['summary'] as String,
+    source: data['source'] as String,
+    category: data['category'] as String,
+    cover: data['cover'] as String,
+  );
+
+  static Future<List<SeerahStory>> load() async {
+    final raw = await rootBundle.loadString('assets/data/madinah_cinematic/stories.json');
+    final decoded = jsonDecode(raw) as List<dynamic>;
+    return decoded.map((e) => SeerahStory.fromJson(e as Map<String, dynamic>)).toList();
+  }
+}
+
+class SeerahMuseumScreen extends StatefulWidget {
+  const SeerahMuseumScreen({super.key});
+  @override
+  State<SeerahMuseumScreen> createState() => _SeerahMuseumScreenState();
+}
+
+class _SeerahMuseumScreenState extends State<SeerahMuseumScreen> {
+  late final Future<List<SeerahStory>> _stories = SeerahStory.load();
+  final TextEditingController _search = TextEditingController();
+  final PageController _cards = PageController(viewportFraction: .76);
+  String category = 'الكل';
+  static const categories = <String>[
+    'الكل', 'محبته لأمته', 'مواقف الرحمة', 'المواساة والوفاء',
+    'التوبة والعدل', 'رحلة الرسالة',
+  ];
+
+  @override
+  void dispose() {
+    _search.dispose();
+    _cards.dispose();
+    super.dispose();
+  }
+
+  void _open(SeerahStory story) => Navigator.of(context).push(
+    cinematicRoute(SeerahStoryExperience(story: story)));
+
+  @override
+  Widget build(BuildContext context) => Directionality(
+    textDirection: TextDirection.rtl,
+    child: Scaffold(
+      backgroundColor: cinematicDeep,
+      body: FutureBuilder<List<SeerahStory>>(
+        future: _stories,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return Center(child: Text('لم نتمكن من فتح الحكايات: ${snapshot.error}',
+              style: const TextStyle(color: cinematicCream)));
+          }
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator(color: cinematicGold));
+          }
+          final term = _search.text.trim();
+          final data = snapshot.data!.where((story) =>
+            (category == 'الكل' || story.category == category) &&
+            (term.isEmpty || story.title.contains(term) ||
+              story.summary.contains(term) || story.source.contains(term))).toList();
+          return CustomScrollView(slivers: [
+            SliverAppBar(
+              expandedHeight: 320, pinned: true,
+              backgroundColor: cinematicGreen,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_forward_ios_rounded, color: cinematicCream),
+                onPressed: () => Navigator.pop(context)),
+              title: const Text('معرض السيرة النبوية', style: TextStyle(color: cinematicCream)),
+              flexibleSpace: FlexibleSpaceBar(background: Stack(fit: StackFit.expand, children: [
+                const CinematicImage('$cinematicAssets/scenes/quran_courtyard.jpg'),
+                const DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(
+                  begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                  colors: [Color(0x15041710), Color(0x8A041710), cinematicDeep]))),
+                const SafeArea(child: Align(alignment: Alignment.bottomCenter,
+                  child: Padding(padding: EdgeInsets.fromLTRB(22, 0, 22, 20),
+                    child: Column(mainAxisSize: MainAxisSize.min, children: [
+                      CinematicPill(text: '50 قصة وموقفًا'),
+                      SizedBox(height: 14),
+                      CinematicHeading('حكايات عن رسول الله ﷺ',
+                        subtitle: 'مواقف في الرحمة والوفاء والتوبة والسيرة، بمراجعها'),
+                    ]),
+                  )),
+                ),
+              ])),
+            ),
+            SliverToBoxAdapter(child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 18, 16, 8),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                TextField(
+                  controller: _search,
+                  onChanged: (_) {
+                    setState(() {});
+                    if (_cards.hasClients) _cards.jumpToPage(0);
+                  },
+                  style: const TextStyle(color: cinematicCream),
+                  decoration: InputDecoration(
+                    hintText: 'ابحثي عن موقف أو حديث أو اسم...',
+                    hintStyle: const TextStyle(color: cinematicMuted),
+                    prefixIcon: const Icon(Icons.search, color: cinematicGold),
+                    filled: true, fillColor: cinematicGreen.withOpacity(.65),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18),
+                      borderSide: BorderSide(color: cinematicGold.withOpacity(.25))),
+                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(18),
+                      borderSide: const BorderSide(color: cinematicGold)),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                SizedBox(height: 45, child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: categories.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  itemBuilder: (context, i) {
+                    final label = categories[i];
+                    final active = label == category;
+                    return ChoiceChip(
+                      label: Text(label), selected: active,
+                      backgroundColor: cinematicGreen,
+                      selectedColor: cinematicGold,
+                      checkmarkColor: cinematicDeep,
+                      labelStyle: TextStyle(color: active ? cinematicDeep : cinematicCream,
+                        fontWeight: FontWeight.w700),
+                      side: BorderSide(color: cinematicGold.withOpacity(.4)),
+                      onSelected: (_) {
+                        setState(() => category = label);
+                        if (_cards.hasClients) _cards.jumpToPage(0);
+                      },
+                    );
+                  },
+                )),
+                const SizedBox(height: 20),
+                Text('جولة الصور • ${data.length} قصة',
+                  style: const TextStyle(color: cinematicCream, fontSize: 21,
+                    fontWeight: FontWeight.w800)),
+                const SizedBox(height: 8),
+                const Text('اسحبي البطاقات، واضغطي على الحكاية للاستماع وقراءة مصدرها.',
+                  style: TextStyle(color: cinematicMuted, height: 1.55)),
+              ]),
+            )),
+            SliverToBoxAdapter(child: SizedBox(height: 335,
+              child: data.isEmpty ? const Center(child: Text('لا توجد نتائج',
+                style: TextStyle(color: cinematicCream)))
+                : PageView.builder(
+                  controller: _cards,
+                  itemCount: data.length,
+                  itemBuilder: (context, i) => AnimatedBuilder(
+                    animation: _cards,
+                    child: _SeerahPoster(story: data[i], onTap: () => _open(data[i])),
+                    builder: (context, child) {
+                      double page = i.toDouble();
+                      if (_cards.hasClients && _cards.position.haveDimensions) {
+                        page = _cards.page ?? i.toDouble();
+                      }
+                      final delta = (i - page).clamp(-2.0, 2.0).toDouble();
+                      final matrix = Matrix4.identity()
+                        ..setEntry(3, 2, .001)
+                        ..rotateY(delta * -.10)
+                        ..scale(1 - math.min(delta.abs() * .12, .25));
+                      return Transform(alignment: Alignment.center, transform: matrix,
+                        child: Padding(padding: const EdgeInsets.symmetric(horizontal: 7), child: child));
+                    },
+                  ),
+                ),
+            )),
+            const SliverToBoxAdapter(child: Padding(
+              padding: EdgeInsets.fromLTRB(18, 18, 18, 8),
+              child: Text('جميع الحكايات', style: TextStyle(
+                color: cinematicCream, fontSize: 22, fontWeight: FontWeight.bold)),
+            )),
+            SliverList(delegate: SliverChildBuilderDelegate((context, i) {
+              final story = data[i];
+              return Padding(padding: const EdgeInsets.fromLTRB(16, 5, 16, 5),
+                child: Material(color: cinematicGreen.withOpacity(.76),
+                  borderRadius: BorderRadius.circular(19),
+                  child: InkWell(borderRadius: BorderRadius.circular(19),
+                    onTap: () => _open(story),
+                    child: Padding(padding: const EdgeInsets.all(9), child: Row(children: [
+                      ClipRRect(borderRadius: BorderRadius.circular(12),
+                        child: SizedBox(height: 85, width: 78,
+                          child: CinematicImage(story.cover))),
+                      const SizedBox(width: 12),
+                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(story.title, maxLines: 2, overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: cinematicCream,
+                              fontSize: 16, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 5),
+                          Text(story.category, style: const TextStyle(
+                            color: cinematicGold, fontSize: 12)),
+                          Text(story.source, maxLines: 1, overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(color: cinematicMuted, fontSize: 11)),
+                        ])),
+                      const Icon(Icons.arrow_back_ios_new_rounded,
+                        size: 17, color: cinematicGold),
+                    ])),
+                  ),
+                ),
+              );
+            }, childCount: data.length)),
+            const SliverToBoxAdapter(child: Padding(
+              padding: EdgeInsets.fromLTRB(22, 18, 22, 40),
+              child: Text(
+                '$cinematicIllustrationNote\nالمراجع من ملف المحتوى المقدم، وتحتاج مراجعة علمية وتحريرية قبل النشر.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: cinematicMuted, height: 1.7, fontSize: 11)),
+            )),
+          ]);
+        },
+      ),
+    ),
+  );
+}
+
+class _SeerahPoster extends StatelessWidget {
+  const _SeerahPoster({required this.story, required this.onTap});
+  final SeerahStory story;
+  final VoidCallback onTap;
+  @override
+  Widget build(BuildContext context) => Material(
+    color: cinematicGreen,
+    elevation: 12,
+    borderRadius: BorderRadius.circular(22),
+    child: InkWell(onTap: onTap, borderRadius: BorderRadius.circular(22),
+      child: ClipRRect(borderRadius: BorderRadius.circular(22), child: Stack(
+        fit: StackFit.expand, children: [
+          CinematicImage(story.cover),
+          const DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(
+            begin: Alignment.topCenter, end: Alignment.bottomCenter,
+            colors: [Colors.transparent, Color(0xBB031B13), cinematicDeep],
+            stops: [0, .6, 1]))),
+          Padding(padding: const EdgeInsets.all(18), child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start, children: [
+              CinematicPill(text: 'الحكاية ${story.id}'),
+              const Spacer(),
+              Text(story.title, maxLines: 3, overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: cinematicCream,
+                  fontSize: 23, fontWeight: FontWeight.bold, height: 1.35)),
+              const SizedBox(height: 8),
+              Text(story.source, maxLines: 2,
+                style: const TextStyle(color: cinematicGold, fontSize: 12)),
+              const SizedBox(height: 10),
+              const Row(children: [Icon(Icons.play_circle_fill_rounded,
+                color: cinematicGold), SizedBox(width: 8),
+                Text('افتحي التجربة', style: TextStyle(color: cinematicCream))]),
+            ]),
+          ),
+        ]),
+      ),
+    ),
+  );
+}
+
+class SeerahStoryExperience extends StatefulWidget {
+  const SeerahStoryExperience({super.key, required this.story});
+  final SeerahStory story;
+  @override
+  State<SeerahStoryExperience> createState() => _SeerahStoryExperienceState();
+}
+
+class _SeerahStoryExperienceState extends State<SeerahStoryExperience>
+    with SingleTickerProviderStateMixin {
+  final FlutterTts _tts = FlutterTts();
+  late final AnimationController _breath;
+  int _step = 0;
+  bool _reading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _breath = AnimationController(vsync: this,
+      duration: const Duration(seconds: 10))..repeat(reverse: true);
+    _tts.setLanguage('ar-SA');
+    _tts.setSpeechRate(.42);
+    _tts.setCompletionHandler(() { if (mounted) setState(() => _reading = false); });
+    _tts.setErrorHandler((_) { if (mounted) setState(() => _reading = false); });
+  }
+
+  Future<void> _toggleSound() async {
+    if (_reading) {
+      await _tts.stop();
+      if (mounted) setState(() => _reading = false);
+      return;
+    }
+    try {
+      setState(() => _reading = true);
+      await _tts.speak('${widget.story.title}. ${widget.story.summary}');
+    } catch (_) {
+      if (mounted) {
+        setState(() => _reading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('تعذر تشغيل القراءة الصوتية')));
+      }
+    }
+  }
+
+  void _move(int delta) {
+    _tts.stop();
+    setState(() {
+      _reading = false;
+      _step = (_step + delta).clamp(0, 2).toInt();
+    });
+  }
+
+  @override
+  void dispose() {
+    _tts.stop();
+    _breath.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final st = widget.story;
+    final String title;
+    final String desc;
+    switch (_step) {
+      case 0:
+        title = st.title;
+        desc = 'ابدئي الاستماع إلى الحكاية، وتعرّفي على الموقف الوارد في المصادر.';
+        break;
+      case 1:
+        title = 'الحكاية';
+        desc = st.summary;
+        break;
+      default:
+        title = 'المصدر والتوثيق';
+        desc = '${st.source}\n\nالملخص سرد تحريري للموقف، وليس نص الحديث حرفيًا. '
+          'راجعي النص الأصلي قبل إعادة النشر.';
+    }
+    return Directionality(textDirection: TextDirection.rtl,
+      child: Scaffold(backgroundColor: cinematicDeep,
+        body: Stack(children: [
+          Positioned.fill(child: AnimatedBuilder(
+            animation: _breath,
+            builder: (context, _) => Transform.scale(
+              scale: MediaQuery.of(context).disableAnimations ? 1 : 1.06 + _breath.value * .07,
+              child: CinematicImage(st.cover)),
+          )),
+          const Positioned.fill(child: IgnorePointer(child: DecoratedBox(
+            decoration: BoxDecoration(gradient: LinearGradient(
+              begin: Alignment.topCenter, end: Alignment.bottomCenter,
+              colors: [Color(0x99041710), Color(0xAA041710), cinematicDeep]))))),
+          SafeArea(child: Padding(padding: const EdgeInsets.fromLTRB(22, 12, 22, 22),
+            child: Column(children: [
+              Row(children: [
+                IconButton.filledTonal(
+                  style: IconButton.styleFrom(backgroundColor: cinematicGreen),
+                  icon: const Icon(Icons.arrow_forward_ios_rounded, color: cinematicCream),
+                  onPressed: () => Navigator.pop(context)),
+                const Spacer(),
+                const CinematicPill(text: 'معرض السيرة'),
+                const Spacer(),
+                IconButton.filledTonal(
+                  style: IconButton.styleFrom(backgroundColor: cinematicGreen),
+                  icon: Icon(_reading ? Icons.pause_rounded : Icons.volume_up_rounded,
+                    color: cinematicGold),
+                  tooltip: 'قراءة الحكاية بالصوت', onPressed: _toggleSound),
+              ]),
+              const Spacer(),
+              const Icon(Icons.auto_stories, color: cinematicGold, size: 36),
+              const SizedBox(height: 16),
+              AnimatedSwitcher(duration: const Duration(milliseconds: 650),
+                child: ConstrainedBox(key: ValueKey(_step),
+                  constraints: BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * .47),
+                  child: SingleChildScrollView(child: Column(children: [
+                    CinematicHeading(title, subtitle: desc),
+                    if (_step == 2) ...[
+                      const SizedBox(height: 24),
+                      const Text(cinematicIllustrationNote,
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: cinematicGold, height: 1.6, fontSize: 12)),
+                    ],
+                  ])),
+                ),
+              ),
+              const SizedBox(height: 26),
+              Row(children: List.generate(3, (i) => Expanded(child: AnimatedContainer(
+                duration: const Duration(milliseconds: 400), height: 4,
+                margin: const EdgeInsets.only(left: 7),
+                decoration: BoxDecoration(borderRadius: BorderRadius.circular(4),
+                  color: i <= _step ? cinematicGold : cinematicMuted.withOpacity(.5))),
+              ))),
+              const SizedBox(height: 15),
+              Row(children: [
+                Expanded(child: CinematicButton(
+                  label: _step == 2 ? 'إعادة' : 'التالي',
+                  onPressed: () => _move(_step == 2 ? -2 : 1))),
+                const SizedBox(width: 10),
+                if (_step > 0) IconButton.filledTonal(
+                  style: IconButton.styleFrom(backgroundColor: cinematicGreen),
+                  icon: const Icon(Icons.arrow_forward_ios_rounded, color: cinematicGold),
+                  onPressed: () => _move(-1)),
+              ]),
+              const SizedBox(height: 14),
+              const Text('الراوي: قراءة آلية للنص التحريري • لا تمثيل لصوت النبي ﷺ',
+                style: TextStyle(color: cinematicMuted, fontSize: 10),
+                textAlign: TextAlign.center),
+            ]),
+          )),
+        ]),
+      ),
+    );
+  }
+}

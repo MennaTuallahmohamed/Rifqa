@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 
 import '../../models/madinah/prophetic_story.dart';
@@ -5,15 +6,18 @@ import '../../services/madinah/madinah_content_repository.dart';
 import '../../services/madinah/madinah_repository.dart';
 import '../../screens/duas/amanat_screen.dart';
 import '../../state/app_state.dart';
-import 'madinah_gate_experience.dart';
+import 'immersive/cinematic_hub.dart';
+import 'immersive/cinematic_tour.dart';
+import 'immersive/seerah_museum.dart';
 import 'madinah_ui.dart';
-import 'mosque/madinah_mosque_gallery.dart';
+import 'immersive/seerah_museum_v3.dart';
+import 'immersive/rawdah_booking_v3.dart';
+import 'immersive/madinah_v3_home.dart';
+import 'immersive/cinematic_salawat.dart';
 import 'memories/madinah_memories_screen.dart';
 import 'mosque/prophet_mosque_screen.dart';
-import '../rawdah/rawdah_screen.dart';
-import 'salawat/salawat_library_screen.dart';
 import 'stories/prophetic_story_screen.dart';
-import 'stories/prophetic_stories_screen.dart';
+import 'stories/prophetic_story_player.dart';
 
 const _green = Color(0xFF104B39);
 const _dark = Color(0xFF073C2D);
@@ -21,7 +25,7 @@ const _gold = Color(0xFFC5A15F);
 const _cream = Color(0xFFFAF8F2);
 const _ink = Color(0xFF20352C);
 const _muted = Color(0xFF77837A);
-const _heroImage = 'assets/images/rifqa_madinah_hero.jpg';
+const _heroImage = 'assets/images/madinah/exterior_sunset_wide.png';
 
 class MadinahScreen extends StatefulWidget {
   const MadinahScreen({
@@ -87,25 +91,15 @@ class _MadinahScreenState extends State<MadinahScreen> {
   }
 
   void _openRawdah() {
-    _openPage(const RawdahScreen());
+    _openPage(const CinematicTourScreen(kind: CinematicJourneyKind.rawdah));
   }
 
   void _openStories() {
-    _openPage(
-      PropheticStoriesScreen(
-        repository: widget.repository,
-        storiesRepository: widget.contentRepository.storiesRepository,
-      ),
-    );
+    _openPage(const SeerahMuseumScreen());
   }
 
   void _openSalawat() {
-    _openPage(
-      SalawatLibraryScreen(
-        repository: widget.repository,
-        salawatRepository: widget.contentRepository.salawatRepository,
-      ),
-    );
+    _openPage(const CinematicSalawatScreen());
   }
 
   void _openMemories() {
@@ -115,18 +109,7 @@ class _MadinahScreenState extends State<MadinahScreen> {
   }
 
   void _openVirtualTour() {
-    _openPage(
-      MadinahGateExperience(
-        onEnter: () {
-          if (!mounted) return;
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(
-              builder: (_) => const MadinahMosqueGalleryScreen(),
-            ),
-          );
-        },
-      ),
-    );
+    _openPage(const MadinahImmersiveHub());
   }
 
   void _openAmanat() {
@@ -210,6 +193,18 @@ class _MadinahScreenState extends State<MadinahScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // RIFQA_MADINAH_V3_ENTRY: original repository state and error UI remain intact.
+    if (!loading && error == null) {
+      return MadinahV3Home(
+        onMosqueTour: () { _openPage(const MadinahV3GateEntry()); },
+        onRawdahTour: () { _openPage(const CinematicTourScreen(kind: CinematicJourneyKind.rawdah)); },
+        onBooking: () { _openPage(const RawdahBookingV3()); },
+        onGuide: _openMosque,
+        onStories: () { _openPage(const SeerahMuseumV3()); },
+        onSalawat: () { _openPage(const CinematicSalawatScreen()); },
+        onMemories: () { _openPage(MadinahMemoriesV3(onOpen: _openMemories)); },
+      );
+    }
     if (loading) {
       return const Scaffold(
         backgroundColor: _cream,
@@ -290,16 +285,7 @@ class _MadinahScreenState extends State<MadinahScreen> {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-                child: _FeaturedExperienceCard(
-                  badge: '⭐ تجربة مميزة',
-                  title: 'استشعري عظمة المسجد النبوي',
-                  subtitle:
-                      'جولة ثلاثية الأبعاد تبدأ ببوابة تُفتح أمامكِ، ثم صور حقيقية من رحاب المسجد',
-                  buttonLabel: 'ابدأ الجولة',
-                  thumbnailAsset:
-                      'assets/images/madinah/gate_sultan_abdulmajeed.png',
-                  onTap: _openVirtualTour,
-                ),
+                child: _VirtualTourBanner(onTap: _openVirtualTour),
               ),
             ),
 
@@ -425,6 +411,24 @@ class _MadinahScreenState extends State<MadinahScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               sliver: SliverList(
                 delegate: SliverChildListDelegate([
+                  if (featuredStory != null) ...[
+                    _StoryTile(
+                      title: 'حكاية تفاعلية: ${featuredStory.title}',
+                      subtitle: 'مشاهد متتابعة مع عرض النص والمصدر',
+                      icon: Icons.play_circle_outline_rounded,
+                      onTap: () => _openPage(
+                        PropheticStoryPlayer(
+                          story: featuredStory,
+                          backgroundAssets: const [
+                            'assets/images/madinah/exterior_sunset_wide.png',
+                            'assets/images/madinah/courtyard_day_umbrella.png',
+                            'assets/images/madinah/minarets_sunset.png',
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                  ],
                   if (featuredStory != null)
                     _StoryTile(
                       title: featuredStory.title,
@@ -843,210 +847,126 @@ class _ShortcutCard extends StatelessWidget {
 }
 
 // ───────────────────────────────────────────────────────
-// Featured Experience Card
-// (badge + text + gold CTA pill + photo thumbnail with a
-// play button — the "تجربة مميزة" banner style)
+// Virtual Tour Banner
 // ───────────────────────────────────────────────────────
 
-class _FeaturedExperienceCard extends StatelessWidget {
-  const _FeaturedExperienceCard({
-    required this.badge,
-    required this.title,
-    required this.subtitle,
-    required this.buttonLabel,
-    required this.thumbnailAsset,
-    required this.onTap,
-  });
+class _VirtualTourBanner extends StatefulWidget {
+  const _VirtualTourBanner({required this.onTap});
 
-  final String badge;
-  final String title;
-  final String subtitle;
-  final String buttonLabel;
-  final String thumbnailAsset;
   final VoidCallback onTap;
+
+  @override
+  State<_VirtualTourBanner> createState() => _VirtualTourBannerState();
+}
+
+class _VirtualTourBannerState extends State<_VirtualTourBanner>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(seconds: 3),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _pulse.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(28),
+      color: _dark,
+      borderRadius: BorderRadius.circular(26),
       child: InkWell(
-        borderRadius: BorderRadius.circular(28),
-        onTap: onTap,
+        borderRadius: BorderRadius.circular(26),
+        onTap: widget.onTap,
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(18),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(26),
             gradient: const LinearGradient(
-              begin: Alignment.topRight,
-              end: Alignment.bottomLeft,
-              colors: [_green, _dark],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [_dark, Color(0xFF042019)],
             ),
-            border: Border.all(color: _gold.withValues(alpha: 0.55)),
-            boxShadow: [
-              BoxShadow(
-                color: _dark.withValues(alpha: 0.28),
-                blurRadius: 22,
-                offset: const Offset(0, 12),
-              ),
-            ],
+            border: Border.all(color: _gold.withValues(alpha: 0.35)),
           ),
-          // Row order matters for RTL: the thumbnail is listed FIRST so it
-          // lands on the right (the RTL start edge), text second so it
-          // lands on the left — matching the reference layout exactly.
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              _ThumbnailPlay(asset: thumbnailAsset),
+              AnimatedBuilder(
+                animation: _pulse,
+                builder: (context, child) {
+                  final double glow = _pulse.value * 8 + 6;
+                  return Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: _gold.withValues(alpha: 0.4),
+                          blurRadius: glow,
+                          spreadRadius: glow * 0.12,
+                        ),
+                      ],
+                    ),
+                    child: child,
+                  );
+                },
+                child: Container(
+                  height: 56,
+                  width: 56,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: _gold),
+                    color: Colors.white.withValues(alpha: 0.06),
+                  ),
+                  child: const Icon(
+                    Icons.view_in_ar_rounded,
+                    color: _gold,
+                    size: 26,
+                  ),
+                ),
+              ),
               const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 5,
-                      ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: _gold.withValues(alpha: 0.6),
-                        ),
-                      ),
-                      child: Text(
-                        badge,
-                        style: const TextStyle(
-                          color: _gold,
-                          fontSize: 10.5,
-                          fontWeight: FontWeight.w700,
-                        ),
+                    const Text(
+                      '✦ جديد',
+                      style: TextStyle(
+                        color: _gold,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
                       ),
                     ),
-                    const SizedBox(height: 10),
-                    Text(
-                      title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
+                    const SizedBox(height: 4),
+                    const Text(
+                      'جولة افتراضية داخل المسجد النبوي',
+                      style: TextStyle(
                         color: Colors.white,
-                        fontSize: 16,
                         fontWeight: FontWeight.w900,
-                        height: 1.3,
+                        fontSize: 15.5,
                       ),
                     ),
-                    const SizedBox(height: 5),
+                    const SizedBox(height: 4),
                     Text(
-                      subtitle,
+                      'بوابة ثلاثية الأبعاد، ثم صور حقيقية تستشعرين فيها المكان',
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.76),
-                        fontSize: 10.8,
-                        height: 1.55,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 9,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _gold,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            buttonLabel,
-                            style: const TextStyle(
-                              color: _dark,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 12,
-                            ),
-                          ),
-                          const SizedBox(width: 4),
-                          const Icon(
-                            Icons.chevron_left_rounded,
-                            color: _dark,
-                            size: 16,
-                          ),
-                        ],
+                        color: Colors.white.withValues(alpha: 0.72),
+                        fontSize: 11,
+                        height: 1.5,
                       ),
                     ),
                   ],
                 ),
               ),
+              const SizedBox(width: 6),
+              const Icon(Icons.chevron_left_rounded, color: _gold),
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _ThumbnailPlay extends StatelessWidget {
-  const _ThumbnailPlay({required this.asset});
-
-  final String asset;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 92,
-      height: 118,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: Image.asset(
-              asset,
-              fit: BoxFit.cover,
-              width: 92,
-              height: 118,
-              errorBuilder: (context, error, stackTrace) {
-                return const ColoredBox(color: _green);
-              },
-            ),
-          ),
-          DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withValues(alpha: 0.05),
-                  Colors.black.withValues(alpha: 0.32),
-                ],
-              ),
-            ),
-            child: const SizedBox(width: 92, height: 118),
-          ),
-          Container(
-            height: 38,
-            width: 38,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: _gold,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.32),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.play_arrow_rounded,
-              color: _dark,
-              size: 22,
-            ),
-          ),
-        ],
       ),
     );
   }
