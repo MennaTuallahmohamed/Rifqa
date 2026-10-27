@@ -1,5 +1,8 @@
+import '../umrah/rifqa_premium_journey.dart';
+import '../umrah/umrah_ultimate_page.dart';
 
 import 'package:flutter/material.dart';
+import '../community/community_screen.dart';
 
 import '../../state/app_state.dart';
 import '../../services/madinah/madinah_content_repository.dart';
@@ -9,10 +12,11 @@ import '../duas/duas_screen.dart';
 import '../hajj/hajj_screen.dart';
 import '../haramain/haramain_ultimate_screen.dart';
 import '../madinah/madinah_screen.dart';
-import '../umrah/umrah_screen.dart';
+import '../umrah/umrah_cinematic_v2.dart';
 import '../ziyarat/ziyarat_screen.dart';
 import '../services/service_screen.dart';
 import '../markets/markets_screen.dart';
+import '../refqa_community/refqa_community.dart';
 import '../profile/rifqa_profile_screen.dart';
 import '../assistant/lost_help_screen.dart';
 import '../pilgrim_watch/pilgrim_watch_screen.dart';
@@ -49,6 +53,8 @@ class _HomeService {
 }
 
 const _mainServices = <_HomeService>[
+  _HomeService('مجتمع رِفقة', 'تواصلي مع ضيوف الرحمن', Icons.forum_rounded, -11),
+
   _HomeService(
     'الخريطة',
     'اكتشف الأماكن المهمة',
@@ -107,6 +113,12 @@ const _moreServices = <_HomeService>[
     -7,
   ),
   _HomeService(
+    'مجتمع رفقة',
+    'أسئلة ونصائح ومعلومات',
+    Icons.forum_rounded,
+    -11,
+  ),
+  _HomeService(
     'أرقام مهمة',
     'أرقام قد تحتاجها',
     Icons.call_rounded,
@@ -140,6 +152,8 @@ class HomeScreen extends StatelessWidget {
   // -----------------------------------------------
 
   void _go(BuildContext context, int code) {
+ // RIFQA_RUN_FIX
+ if (code == -11) { Navigator.of(context, rootNavigator: true).push(MaterialPageRoute(builder: (_) => const CommunityScreen())); return; }
     // Special Home actions must not be interpreted as Shell tab indexes.
     if (code == -5) {
       open(2); // Rifqati / Groups tab
@@ -163,7 +177,7 @@ class HomeScreen extends StatelessWidget {
     }
     if (code == 1) {
       Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => const UmrahScreen()),
+        MaterialPageRoute(builder: (_) => const RifqaPremiumJourney()),
       );
       return;
     }
@@ -219,6 +233,14 @@ class HomeScreen extends StatelessWidget {
       return;
     }
 
+    if (code == -11) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const RefqaCommunityScreen(),
+        ),
+      );
+      return;
+    }
     if (code == -7) {
       Navigator.of(context).push(
         MaterialPageRoute(
