@@ -4,6 +4,11 @@ import '../../services/markets/rifqa_markets_catalog.dart';
 import 'market_details_premium_screen.dart';
 import 'markets_directory_map_screen.dart';
 import 'shopping_list_screen.dart';
+import '../../services/markets/market_community_service.dart';
+import 'market_clock_artwork.dart';
+import 'market_community_screen.dart';
+import 'market_contribute_screen.dart';
+import 'clock_tower_directory_screen.dart';
 import 'widgets/rifqa_market_style.dart';
 
 class MarketsScreen extends StatefulWidget {
@@ -115,7 +120,7 @@ class _MarketsScreenState extends State<MarketsScreen> {
     textDirection: TextDirection.rtl,
     child: Scaffold(
       backgroundColor: MarketPalette.cream,
-      body: _loading
+      body: SafeArea(top: true, bottom: false, child: _loading
           ? const Center(child: CircularProgressIndicator(color: MarketPalette.emerald))
           : _error != null
               ? Center(child: Padding(padding: const EdgeInsets.all(24), child: Column(
@@ -156,6 +161,17 @@ class _MarketsScreenState extends State<MarketsScreen> {
                             _categories(),
                             const SizedBox(height: 22),
                             _quickLinks(),
+                            // MARKETS_FINAL_ACTIONS_V2
+                            const SizedBox(height: 12),
+                            if (_city == RifqaCity.makkah) ...[
+                              _clockTowerLink(),
+                              const SizedBox(height: 12),
+                            ],
+                            _communityHubActions(),
+                            const SizedBox(height: 12),
+                            _communityGuide(),
+                            const SizedBox(height: 18),
+                            _communityRecent(),
                             const SizedBox(height: 23),
                             if (_search.text.trim().isEmpty && !_onlyFavorites && !_onlyOfficial && _interest == 'الكل') ...[
                               _heading('وجهات مميزة', 'مجمعات معروفة وأماكن للتسوق', Icons.auto_awesome_outlined),
@@ -181,7 +197,7 @@ class _MarketsScreenState extends State<MarketsScreen> {
                     ),
                   ],
                 ),
-    ),
+    )),
   );
 
   Widget _hero() {
@@ -299,6 +315,133 @@ class _MarketsScreenState extends State<MarketsScreen> {
     Expanded(child: _actionLink('قائمة مشترياتي', 'هداياك في مكان', Icons.checklist_rounded, _list)),
   ]);
 
+  Widget _clockTowerLink() => InkWell(
+    onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+      builder: (_) => const ClockTowerDirectoryScreen())),
+    borderRadius: BorderRadius.circular(20),
+    child: MarketSoftCard(padding: const EdgeInsets.all(14), child: Row(children: [
+      Container(width: 48, height: 48,
+        decoration: BoxDecoration(color: MarketPalette.pale,
+          borderRadius: BorderRadius.circular(14)),
+        child: const Icon(Icons.layers_rounded,
+          color: MarketPalette.emerald, size: 27)),
+      const SizedBox(width: 10),
+      const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('محلات برج الساعة • 7 أدوار', maxLines: 2,
+            style: TextStyle(color: MarketPalette.ink,
+              fontWeight: FontWeight.w900, fontSize: 14)),
+          SizedBox(height: 4),
+          Text('ابحث حسب الدور والنشاط أو أضف مكانًا جديدًا',
+            maxLines: 2, overflow: TextOverflow.ellipsis,
+            style: TextStyle(color: MarketPalette.muted, fontSize: 11)),
+        ])),
+      const Icon(Icons.arrow_back_ios_new_rounded,
+        color: MarketPalette.emerald, size: 16),
+    ])),
+  );
+
+  Future<void> _openCommunityAdd() async {
+    final added = await Navigator.of(context).push<bool>(MaterialPageRoute(
+      builder: (_) => MarketContributeScreen(initialCity: _city.key)));
+    if (added == true && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('تم نشر المكان! هتلاقيه في «عرّف غيرك».')));
+    }
+  }
+
+  void _openCommunityDirectory() => Navigator.of(context).push(
+    MaterialPageRoute<void>(builder: (_) => MarketCommunityScreen(
+      initialCity: _city.key)));
+
+  Widget _communityHubActions() => Row(children: [
+    Expanded(child: _communityHubTile('أضف مكان',
+      'انشر سوق أو محل', Icons.add_location_alt_outlined, _openCommunityAdd)),
+    const SizedBox(width: 10),
+    Expanded(child: _communityHubTile('عرّف غيرك',
+      'أماكن أضافها الناس', Icons.volunteer_activism_outlined,
+      _openCommunityDirectory)),
+  ]);
+
+  Widget _communityHubTile(String title, String subtitle,
+    IconData icon, VoidCallback action) => InkWell(
+      onTap: action, borderRadius: BorderRadius.circular(20),
+      child: MarketSoftCard(padding: const EdgeInsets.all(12),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Icon(icon, color: MarketPalette.emerald, size: 27),
+          const SizedBox(height: 8),
+          Text(title, style: const TextStyle(fontSize: 13,
+              color: MarketPalette.ink, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 3),
+          Text(subtitle, maxLines: 2, overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 10.5,
+              color: MarketPalette.muted)),
+        ])),
+    );
+
+  Widget _communityGuide() => MarketSoftCard(
+    padding: EdgeInsets.zero,
+    child: ExpansionTile(
+      leading: const Icon(Icons.info_outline_rounded,
+        color: MarketPalette.emerald),
+      title: const Text('كيف يعمل «عرّف غيرك»؟',
+        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800,
+          color: MarketPalette.ink)),
+      childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      children: const [Text('ضيفي محلًا أو سوقًا بموقعه وتصنيفه، '
+          'وهيظهر فورًا باعتباره إضافة من المستخدمين. '
+          'ممكن أي حساب مؤكد يبلغ مرة واحدة عن معلومة خاطئة. '
+          'بعد 3 بلاغات من حسابات مختلفة تختفي الإضافة، '
+          'والمعلومات الأساسية في الدليل لا تُحذف بهذه البلاغات.',
+        style: TextStyle(fontSize: 11.5, height: 1.75,
+          color: MarketPalette.muted))],
+    ),
+  );
+
+  Widget _communityRecent() => StreamBuilder<List<RefqaMarketContribution>>(
+    stream: RefqaMarketsCommunityService.instance.visiblePlaces(),
+    builder: (context, snapshot) {
+      final matches = (snapshot.data ?? const <RefqaMarketContribution>[])
+        .where((p) => p.city == _city.key).toList()
+          ..sort((a, b) => (b.createdAt ?? DateTime(1970))
+              .compareTo(a.createdAt ?? DateTime(1970)));
+      final latest = matches.take(3).toList();
+      if (latest.isEmpty) return const SizedBox.shrink();
+      return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [
+          const Expanded(child: Text('إضافات من مستخدمي رفقة',
+            style: TextStyle(fontWeight: FontWeight.w900, fontSize: 16,
+              color: MarketPalette.ink))),
+          TextButton(onPressed: _openCommunityDirectory,
+            child: const Text('عرض الكل')),
+        ]),
+        const SizedBox(height: 8),
+        ...latest.map((p) => Padding(padding: const EdgeInsets.only(bottom: 7),
+          child: InkWell(onTap: _openCommunityDirectory,
+            borderRadius: BorderRadius.circular(15),
+            child: MarketSoftCard(padding: const EdgeInsets.all(12),
+              child: Row(children: [
+                const Icon(Icons.storefront_outlined,
+                  color: MarketPalette.emerald),
+                const SizedBox(width: 8),
+                Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(p.name, maxLines: 1, overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontWeight: FontWeight.w800,
+                        color: MarketPalette.ink)),
+                    Text('${p.category} • ${p.marketName.isEmpty ? p.area : p.marketName}',
+                      maxLines: 1, overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(fontSize: 10,
+                        color: MarketPalette.muted)),
+                  ])),
+                const Icon(Icons.chevron_left_rounded,
+                  color: MarketPalette.emerald),
+              ]))),
+          )),
+      ]);
+    },
+  );
+
   Widget _actionLink(String title, String caption, IconData icon, VoidCallback action) =>
       InkWell(onTap: action, borderRadius: BorderRadius.circular(20), child: MarketSoftCard(
         padding: const EdgeInsets.all(13),
@@ -331,7 +474,7 @@ class _MarketsScreenState extends State<MarketsScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(height: 115, child: Stack(children: [
-                MarketPhoto(image: m.assetImage, radius: 13),
+                m.id.contains('clock') ? const MarketClockArtwork() : MarketPhoto(image: m.assetImage, radius: 13),
                 Positioned(top: 4, left: 4, child: MarketFavoritesButton(
                   selected: RifqaMarketSaved.instance.contains(m.id), onTap: () => _toggle(m))),
               ])),
@@ -361,36 +504,53 @@ class _MarketsScreenState extends State<MarketsScreen> {
       onTap: () => setState(() { _onlyOfficial = !_onlyOfficial; _onlyFavorites = false; })),
   ]));
 
-  Widget _marketTile(RifqaMarket m) => InkWell(onTap: () => _details(m),
-    borderRadius: BorderRadius.circular(20), child: MarketSoftCard(
-      padding: const EdgeInsets.all(10),
+  // REFQA_MARKET_TILE_RESPONSIVE_V2
+  // No fixed height on the text column; prevents 1px bottom overflows.
+  Widget _marketTile(RifqaMarket m) => InkWell(
+    onTap: () => _details(m),
+    borderRadius: BorderRadius.circular(20),
+    child: MarketSoftCard(padding: const EdgeInsets.all(11),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        SizedBox(width: 106, height: 107, child: Stack(children: [
-          MarketPhoto(image: m.assetImage, radius: 14),
+        SizedBox(width: 92, height: 105, child: Stack(children: [
+          Positioned.fill(child: ClipRRect(borderRadius: BorderRadius.circular(13),
+            child: m.id.contains('clock')
+                ? const MarketClockArtwork()
+                : MarketPhoto(image: m.assetImage, radius: 13))),
           Positioned(top: 3, left: 3, child: MarketFavoritesButton(
-            selected: RifqaMarketSaved.instance.contains(m.id), onTap: () => _toggle(m))),
+            selected: RifqaMarketSaved.instance.contains(m.id),
+            onTap: () => _toggle(m))),
         ])),
-        const SizedBox(width: 12),
-        Expanded(child: SizedBox(height: 107, child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(m.name, maxLines: 2, overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 14, color: MarketPalette.ink)),
-          const SizedBox(height: 3),
-          Text(m.area, maxLines: 1, overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: MarketPalette.emerald, fontSize: 10.5, fontWeight: FontWeight.w700)),
-          const SizedBox(height: 6),
-          Text(m.description, maxLines: 2, overflow: TextOverflow.ellipsis,
-            style: const TextStyle(color: MarketPalette.muted, fontSize: 10.5, height: 1.45)),
-          const Spacer(),
-          Row(children: [
-            Flexible(child: Text(m.isSubMarket ? 'داخل مجمع آخر' : m.category,
-              maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 10, color: MarketPalette.ink, fontWeight: FontWeight.w700))),
-            const Spacer(),
-            const Icon(Icons.arrow_back_ios_new_rounded, size: 14, color: MarketPalette.emerald),
-          ]),
-        ]))),
-      ]),
-    ));
+        const SizedBox(width: 11),
+        Expanded(child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(m.name, maxLines: 2, overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 13, height: 1.2,
+                fontWeight: FontWeight.w900, color: MarketPalette.ink)),
+            const SizedBox(height: 5),
+            Text(m.area, maxLines: 1, overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 10,
+                color: MarketPalette.emerald,
+                fontWeight: FontWeight.w700)),
+            const SizedBox(height: 5),
+            Text(m.description, maxLines: 2, overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 10.5, height: 1.35,
+                color: MarketPalette.muted)),
+            const SizedBox(height: 6),
+            Row(children: [
+              Expanded(child: Text(m.isSubMarket
+                    ? 'داخل مجمع آخر' : m.category,
+                  maxLines: 1, overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 10,
+                    color: MarketPalette.ink,
+                    fontWeight: FontWeight.w700))),
+              const Icon(Icons.chevron_left_rounded, size: 16,
+                  color: MarketPalette.emerald),
+            ]),
+          ])),
+      ])),
+  );
+
 
   Widget _empty() => MarketSoftCard(child: Column(children: [
     const Icon(Icons.travel_explore_rounded, color: MarketPalette.emerald, size: 44),

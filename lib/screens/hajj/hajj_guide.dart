@@ -94,6 +94,16 @@ class _HajjGuidePageState extends State<HajjGuidePage> {
           child: Column(
             children: [
               _top(),
+              ValueListenableBuilder<String?>(
+                valueListenable: HajjSpeaker.I.notice,
+                builder: (_, message, __) => message == null
+                    ? const SizedBox.shrink()
+                    : Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                        child: Text(message, textAlign: TextAlign.center,
+                          style: const TextStyle(color: Color(0xFFFFD889), fontSize: 12)),
+                      ),
+              ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: HajjScene(

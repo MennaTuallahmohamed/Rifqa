@@ -11,6 +11,7 @@ import '../../services/groups/group_service.dart';
 import 'chat_media.dart';
 import 'rifqa_chat_theme.dart';
 import 'friends_screen.dart';
+import 'group_friend_invites_screen.dart';
 import 'group_map_screen.dart';
 import 'group_members_screen.dart';
 
@@ -666,8 +667,15 @@ class _GroupsScreenState extends State<GroupsScreen>
           icon: Icons.group_add_outlined,
         );
         if (name == null || name.trim().isEmpty) return;
-        await service.createGroup(name);
-        toast('تم إنشاء المجموعة');
+        final newGroupId = await service.createGroup(name);
+        toast('تم إنشاء المجموعة وأنتِ مشرفها الأساسي');
+        if (!mounted) return;
+        Navigator.of(context).push(MaterialPageRoute<void>(
+          builder: (_) => GroupInviteFriendScreen(
+            groupId: newGroupId,
+            groupName: name.trim(),
+          ),
+        ));
       });
 
   Future<void> joinGroup() => run(() async {
@@ -784,6 +792,14 @@ class _GroupsScreenState extends State<GroupsScreen>
                           icon: const Icon(Icons.person_add_alt_1_rounded,
                               color: RifqaChat.gold),
                           tooltip: 'الأصدقاء'),
+                      IconButton(
+                           onPressed: () => Navigator.push(
+                               context,
+                               MaterialPageRoute(
+                                   builder: (_) => const GroupFriendInvitesScreen())),
+                           icon: const Icon(Icons.mail_outline_rounded,
+                               color: RifqaChat.gold),
+                           tooltip: 'دعوات الجروبات'),
                       IconButton(
                           onPressed: _openComposeMenu,
                           icon: const Icon(Icons.add_circle_rounded,
@@ -2269,6 +2285,14 @@ class _GroupChatScreenState extends State<GroupChatScreen>
                             groupId: widget.groupId,
                             groupName: widget.groupName)));
               if (v == 'invite') invite();
+              if (v == 'invite_by_friend_code') {
+                Navigator.push(context, MaterialPageRoute<void>(
+                  builder: (_) => GroupInviteFriendScreen(
+                    groupId: widget.groupId,
+                    groupName: widget.groupName,
+                  ),
+                ));
+              }
               if (v == 'requests') showRequests();
               if (v == 'announce') postAnnouncement();
             },
@@ -2291,6 +2315,13 @@ class _GroupChatScreenState extends State<GroupChatScreen>
                     child: ListTile(
                         leading: Icon(Icons.link_rounded),
                         title: Text('إنشاء دعوة'),
+                        contentPadding: EdgeInsets.zero)),
+                const PopupMenuItem(
+                    value: 'invite_by_friend_code',
+                    child: ListTile(
+                        leading: Icon(Icons.person_add_alt_1_rounded),
+                        title: Text('دعوة صديق بالكود'),
+                        subtitle: Text('كود الصداقة: 8 خانات'),
                         contentPadding: EdgeInsets.zero)),
                 const PopupMenuItem(
                     value: 'requests',

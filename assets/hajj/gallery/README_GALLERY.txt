@@ -1,0 +1,1 @@
+Optional images: step_1_2.jpg, step_1_3.jpg through step_8_2.jpg, step_8_3.jpg.

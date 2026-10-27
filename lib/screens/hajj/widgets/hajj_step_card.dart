@@ -3,14 +3,16 @@ import 'package:flutter/services.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../umrah/umrah_3d.dart';
 import '../../umrah/umrah_data.dart';
-import '../../umrah/umrah_voice.dart';
 import '../hajj_3d.dart';
 import '../hajj_data.dart';
 import '../hajj_duas.dart';
 import '../hajj_duas_page.dart';
 import '../hajj_guide.dart';
 import '../hajj_voice.dart';
+import 'hajj_cinematic.dart';
+import 'hajj_photos.dart';
 import 'hajj_scenes.dart';
+import 'hajj_real3d.dart';
 
 class HajjStepCard extends StatefulWidget {
   final UStep step;
@@ -18,6 +20,7 @@ class HajjStepCard extends StatefulWidget {
   final bool touring;
   final VoidCallback onTour, onStop;
   final VoidCallback? onGuideDone;
+  final bool showBanner;
   const HajjStepCard({
     super.key,
     required this.step,
@@ -26,6 +29,7 @@ class HajjStepCard extends StatefulWidget {
     required this.onTour,
     required this.onStop,
     this.onGuideDone,
+    this.showBanner = true,
   });
 
   @override
@@ -51,8 +55,10 @@ class _HajjStepCardState extends State<HajjStepCard> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _Banner(index: i, step: s),
-          const SizedBox(height: 14),
+          if (widget.showBanner) ...[
+            _Banner(index: i, step: s),
+            const SizedBox(height: 14),
+          ],
           Text(s.title,
               style: const TextStyle(
                   color: UC.ink, fontSize: 21, fontWeight: FontWeight.w900)),
@@ -84,7 +90,11 @@ class _HajjStepCardState extends State<HajjStepCard> {
               key: ValueKey('$i-$tab'),
               child: tab == 0
                   ? _how(s)
-                  : (tab == 1 ? _dua(context, s) : _errors(s)),
+                  : tab == 1
+                      ? _dua(context, s)
+                      : tab == 2
+                          ? _errors(s)
+                          : _photos(),
             ),
           ),
         ],
@@ -95,7 +105,7 @@ class _HajjStepCardState extends State<HajjStepCard> {
   // ───────── الصوت ─────────
   Widget _voiceBar(UStep s, int i) {
     return ValueListenableBuilder<bool>(
-      valueListenable: UVoice.I.speaking,
+      valueListenable: HajjSpeaker.I.busy,
       builder: (context, sp, _) => Container(
         padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
@@ -112,13 +122,13 @@ class _HajjStepCardState extends State<HajjStepCard> {
                   filled: true,
                   on: sp
                       ? widget.onStop
-                      : () => UVoice.I.speak(hajjStepNarration(s, i)),
+                      : () => HajjSpeaker.I.say(hajjStepNarration(s, i)),
                 ),
                 const SizedBox(width: 8),
                 _VBtn(
                   icon: Icons.front_hand_rounded,
                   label: 'الدعاء',
-                  on: () => UVoice.I.speak(s.dua, rate: .36),
+                  on: () => HajjSpeaker.I.say(s.dua, rate: .36),
                 ),
                 const SizedBox(width: 8),
                 _VBtn(
@@ -130,13 +140,13 @@ class _HajjStepCardState extends State<HajjStepCard> {
                 ),
               ],
             ),
-            ValueListenableBuilder<bool>(
-              valueListenable: UVoice.I.arabicMissing,
-              builder: (context, miss, _) => miss
+            ValueListenableBuilder<String?>(
+              valueListenable: HajjSpeaker.I.notice,
+              builder: (context, message, _) => message != null
                   ? const Padding(
                       padding: EdgeInsets.only(top: 8),
                       child: Text(
-                          'لم نجد صوتًا عربيًا في جهازك. ثبّت "Google Text-to-speech" وحمّل الصوت العربي.',
+                          'التسجيل البشري غير مضاف لهذه الفقرة. أضيفي ملف MP3 الخاص بها في assets/audio/hajj.',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                               color: UC.muted, fontSize: 11.5, height: 1.5)),
@@ -153,7 +163,7 @@ class _HajjStepCardState extends State<HajjStepCard> {
   Widget _guideButton(UStep s, int i) {
     return GestureDetector(
       onTap: () async {
-        UVoice.I.stop();
+        HajjSpeaker.I.stop();
         final ok = await Navigator.push<bool>(
           context,
           MaterialPageRoute(
@@ -208,7 +218,9 @@ class _HajjStepCardState extends State<HajjStepCard> {
 
   // ───────── أزرار الـ3D ─────────
   Widget _sim3D(String? sim, int i) {
-    final items = <List<Object>>[];
+    final items = <List<Object>>[
+      ['مشهد ثلاثي الأبعاد · حرك الكاميرا', HajjReal3DPage(index: i)],
+    ];
     if (sim == 'arafat') {
       items.add(['عِش غروب عرفة بالـ3D', const HajjArafat3DPage()]);
     } else if (sim == 'jamarat') {
@@ -236,7 +248,7 @@ class _HajjStepCardState extends State<HajjStepCard> {
   Widget _threeDTile(String label, Widget page, {required bool primary}) {
     return GestureDetector(
       onTap: () {
-        UVoice.I.stop();
+        HajjSpeaker.I.stop();
         Navigator.push(context, MaterialPageRoute(builder: (_) => page));
       },
       child: Container(
@@ -284,7 +296,7 @@ class _HajjStepCardState extends State<HajjStepCard> {
 
   // ───────── التبويبات ─────────
   Widget _tabs() {
-    const labels = ['الشرح', 'الدعاء', 'أخطاء شائعة'];
+    const labels = ['الشرح', 'الدعاء', 'أخطاء', '📸 صور'];
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
@@ -293,7 +305,7 @@ class _HajjStepCardState extends State<HajjStepCard> {
       ),
       child: Row(
         children: [
-          for (int k = 0; k < 3; k++)
+          for (int k = 0; k < 4; k++)
             Expanded(
               child: GestureDetector(
                 onTap: () => setState(() => tab = k),
@@ -323,37 +335,7 @@ class _HajjStepCardState extends State<HajjStepCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           for (int k = 0; k < s.how.length; k++)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 28,
-                    height: 28,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      gradient: LinearGradient(colors: s.colors),
-                    ),
-                    child: Text('${k + 1}',
-                        style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w800,
-                            fontSize: 13)),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 3),
-                      child: Text(s.how[k],
-                          style: const TextStyle(
-                              color: UC.ink, fontSize: 15, height: 1.6)),
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            HajjStoryStep(step: widget.index, k: k, text: s.how[k]),
           _info('💡 نصيحة', s.tip, AppColors.softGold),
           if (s.women != null)
             _info('🌸 للمرأة', s.women!, const Color(0xFFF3EAF8)),
@@ -527,6 +509,25 @@ class _HajjStepCardState extends State<HajjStepCard> {
       ],
     );
   }
+
+  /// تبويب الصور: معرض واقعي + ملاحظة
+  Widget _photos() => Column(
+        children: [
+          HajjPhotoGallery(step: widget.index),
+          const SizedBox(height: 10),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+                color: AppColors.softGold,
+                borderRadius: BorderRadius.circular(14)),
+            child: const Text(
+              'اضغط على الصورة لتكبيرها، واسحب لرؤية باقي الصور.',
+              style: TextStyle(color: UC.ink, fontSize: 13, height: 1.5),
+            ),
+          ),
+        ],
+      );
 
   Widget _errors(UStep s) => Column(
         children: [

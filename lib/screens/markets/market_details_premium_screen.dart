@@ -3,6 +3,8 @@ import 'package:share_plus/share_plus.dart';
 
 import '../../services/markets/rifqa_markets_catalog.dart';
 import 'widgets/rifqa_market_style.dart';
+import 'market_clock_artwork.dart';
+import 'clock_tower_directory_screen.dart';
 
 class MarketPremiumDetailsScreen extends StatefulWidget {
   const MarketPremiumDetailsScreen({
@@ -82,7 +84,7 @@ class _MarketPremiumDetailsScreenState extends State<MarketPremiumDetailsScreen>
           const SizedBox(width: 9),
         ],
         flexibleSpace: FlexibleSpaceBar(background: Stack(fit: StackFit.expand, children: [
-          MarketPhoto(image: market.assetImage, radius: 0),
+          market.id.contains('clock') ? const MarketClockArtwork() : MarketPhoto(image: market.assetImage, radius: 0),
           const DecoratedBox(decoration: BoxDecoration(gradient: LinearGradient(
             begin: Alignment.topCenter, end: Alignment.bottomCenter,
             colors: [Color(0x45000000), Color(0x06000000), Color(0xD9063025)],
@@ -193,6 +195,16 @@ class _MarketPremiumDetailsScreenState extends State<MarketPremiumDetailsScreen>
   }
 
   Widget _shopping() => Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+    // REFQA_CLOCK_DIRECTORY_IN_DETAILS_V2
+    if (market.id.contains('clock')) ...[
+      Padding(padding: const EdgeInsets.only(bottom: 12), child:
+        FilledButton.icon(onPressed: () => Navigator.of(context).push(
+          MaterialPageRoute<void>(builder: (_) => const ClockTowerDirectoryScreen())),
+          icon: const Icon(Icons.layers_rounded),
+          label: const Text('عرض محلات برج الساعة حسب الدور'),
+          style: FilledButton.styleFrom(backgroundColor: MarketPalette.evergreen,
+            foregroundColor: Colors.white, minimumSize: const Size.fromHeight(48)))),
+    ],
     _section('أصناف يمكنكِ البحث عنها', Icons.shopping_bag_outlined,
       Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         if (market.tags.isEmpty)

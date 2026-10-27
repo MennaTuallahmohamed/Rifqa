@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'hajj_photos.dart';
 
 /// مشاهد مرسومة ومتحركة لكل منسك من مناسك الحج (تعمل بلا أي ملفات صور).
 /// إن وضعت صورة حقيقية في assets/hajj/step_N.jpg ستظهر بدلها تلقائيًا
@@ -7,6 +8,7 @@ import 'package:flutter/material.dart';
 class HajjScene extends StatefulWidget {
   final int index; // 0..7
   final double height;
+  final int photoIndex;
   final double radius;
   final bool preferAsset;
   final Widget? overlay;
@@ -14,6 +16,7 @@ class HajjScene extends StatefulWidget {
     super.key,
     required this.index,
     this.height = 160,
+    this.photoIndex = 0,
     this.radius = 20,
     this.preferAsset = true,
     this.overlay,
@@ -46,6 +49,10 @@ class _HajjSceneState extends State<HajjScene>
 
   @override
   Widget build(BuildContext context) {
+    final photos = hajjStepPhotos[widget.index];
+    final path = (photos != null && photos.isNotEmpty)
+        ? photos[widget.photoIndex.clamp(0, photos.length - 1).toInt()].asset
+        : 'assets/hajj/step_${widget.index + 1}.jpg';
     return ClipRRect(
       borderRadius: BorderRadius.circular(widget.radius),
       child: SizedBox(
@@ -55,10 +62,25 @@ class _HajjSceneState extends State<HajjScene>
           fit: StackFit.expand,
           children: [
             if (widget.preferAsset)
-              Image.asset(
-                'assets/hajj/step_${widget.index + 1}.jpg',
-                fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _painted(),
+              AnimatedBuilder(
+                animation: _c,
+                child: Image.asset(
+                  path,
+                  fit: BoxFit.cover,
+                  gaplessPlayback: true,
+                  filterQuality: FilterQuality.medium,
+                  errorBuilder: (_, __, ___) => _painted(),
+                ),
+                builder: (_, child) {
+                  final t = _c.value * math.pi * 2; // rifqa-ken-burns
+                  return Transform.translate(
+                    offset: Offset(3 * math.sin(t), 2 * math.cos(t)),
+                    child: Transform.scale(
+                      scale: 1.09 + .025 * math.sin(t),
+                      child: child,
+                    ),
+                  );
+                },
               )
             else
               _painted(),

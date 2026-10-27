@@ -7,6 +7,7 @@ environment:
   sdk: '>=3.4.0 <4.0.0'
 
 dependencies:
+  video_player: ^2.9.5
   flutter:
     sdk: flutter
 
@@ -63,6 +64,16 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/umrah/rifqa_premium/rifqa_bridge_tawaf.jpg
+    - assets/umrah/rifqa_premium/rifqa_bridge_sai.jpg
+    - assets/models/rifqa_tawaf_focus.glb
+    - assets/models/rifqa_sai_focus.glb
+    - assets/models/hajj/
+    - assets/audio/hajj/
+    - assets/hajj/
+    - assets/hajj/gallery/
+    - assets/video/umrah/
+    - assets/umrah/rifqa_premium/
     - assets/audio/madinah/stories/
     - assets/audio/madinah/
     - assets/images/madinah_cinematic/scenes/
@@ -74,6 +85,7 @@ flutter:
     - assets/rifqa_watch/
     - assets/lost_help/
     - assets/rifqa_profile/
+    - assets/refqa_community/
     - assets/markets/
     - assets/markets/images/
     - assets/duas/

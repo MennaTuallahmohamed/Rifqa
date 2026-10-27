@@ -1,0 +1,1 @@
+These GLB models are simplified 3D geometry, NOT photorealistic replicas. Replace them with professional PBR/photogrammetry GLBs using the same filenames.

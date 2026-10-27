@@ -1,0 +1,52 @@
+HAJJ PHOTO CREDIT AND LICENSE NOTICES
+Photos are from Wikimedia Commons. The images are not AI-generated.
+Adaptations: App resizes/crops these photos for display via Flutter BoxFit.cover; no source file cropping by this script.
+Wikimedia links and licenses should remain accessible in the app About/Attributions page.
+
+Image step_1.jpg
+Artist: Seeley International
+License: CC BY-SA 4.0
+Source: https://commons.wikimedia.org/wiki/File:Haji_pilgrimage_mina_tent_city.jpg
+License text: https://creativecommons.org/licenses/by-sa/4.0/
+
+Image step_2.jpg
+Artist: Fahad Faisal
+License: CC BY-SA 4.0
+Source: https://commons.wikimedia.org/wiki/File:Jabal-e-Rehmat_Mount_of_Mercy_Mount_Arafat.jpg
+License text: https://creativecommons.org/licenses/by-sa/4.0/
+
+Image step_3.jpg
+Artist: Arisdp
+License: CC BY-SA 4.0
+Source: https://commons.wikimedia.org/wiki/File:Fajr_in_Muzdalifah.jpg
+License text: https://creativecommons.org/licenses/by-sa/4.0/
+
+Image step_4.jpg
+Artist: Aiman titi
+License: CC BY-SA 3.0
+Source: https://commons.wikimedia.org/wiki/File:AL_Jamarat_1.JPG
+License text: https://creativecommons.org/licenses/by-sa/3.0/
+
+Image step_5.jpg
+Artist: Rakoon
+License: CC0 1.0
+Source: https://commons.wikimedia.org/wiki/File:20250220_Hair_scissors.jpg
+License text: https://creativecommons.org/publicdomain/zero/1.0/
+
+Image step_6.jpg
+Artist: Wurzelgnohm
+License: CC0 1.0
+Source: https://commons.wikimedia.org/wiki/File:Masjidul-HaramAerealView.jpg
+License text: https://creativecommons.org/publicdomain/zero/1.0/
+
+Image step_7.jpg
+Artist: Aiman titi
+License: CC BY-SA 3.0
+Source: https://commons.wikimedia.org/wiki/File:AL_Jamarat_3.JPG
+License text: https://creativecommons.org/licenses/by-sa/3.0/
+
+Image step_8.jpg
+Artist: Wurzelgnohm
+License: CC0 1.0
+Source: https://commons.wikimedia.org/wiki/File:Masjidul-Haram.jpg
+License text: https://creativecommons.org/publicdomain/zero/1.0/

@@ -61,3 +61,6 @@ madinah-backups/
 key.properties
 *serviceAccount*.json
 *firebase-adminsdk*.json
+
+*.apk
+*.aab

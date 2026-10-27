@@ -7,6 +7,7 @@ import 'hajj_data.dart';
 import 'hajj_duas_page.dart';
 import 'hajj_tools.dart';
 import 'hajj_voice.dart';
+import 'widgets/hajj_cinematic.dart';
 import 'widgets/hajj_header.dart';
 import 'widgets/hajj_progress.dart';
 import 'widgets/hajj_step_card.dart';
@@ -55,6 +56,8 @@ class _HajjScreenState extends State<HajjScreen> {
       store.go(i);
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToCard());
       await HajjSpeaker.I.say(hajjStepNarration(hajjGuide[i], i));
+      // A missing human recording must NOT fast-forward the entire tour.
+      if (HajjSpeaker.I.notice.value != null) break;
       if (!_touring || !mounted) break;
       await Future<void>.delayed(const Duration(milliseconds: 600));
     }
@@ -109,11 +112,24 @@ class _HajjScreenState extends State<HajjScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-              Padding(
+              KeyedSubtree(
                 key: _cardKey,
+                child: HajjCinematicHero(
+                  key: ValueKey('hajj-hero-$i'),
+                  index: i,
+                  step: hajjGuide[i],
+                  scroll: _scroll,
+                  touring: _touring,
+                  onTour: _startTour,
+                  onStop: _stopTour,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: HajjStepCard(
                   key: ValueKey('hajj-step-$i'),
+                  showBanner: false,
                   step: hajjGuide[i],
                   index: i,
                   touring: _touring,

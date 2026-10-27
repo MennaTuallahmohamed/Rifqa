@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import '../../core/theme/app_colors.dart';
-import '../umrah/umrah_voice.dart';
 import 'hajj_data.dart';
+import 'hajj_voice.dart';
 
 // ═══════════════════════════════════════════════════════════
 //  Hajj standalone 3D engine
@@ -416,13 +416,13 @@ class HajjVoice {
 
   Future<void> speak(String text, {double rate = .5}) async {
     try {
-      await UVoice.I.speak(text, rate: rate);
+      await HajjSpeaker.I.say(text, rate: rate);
     } catch (_) {}
   }
 
   Future<void> stop() async {
     try {
-      await UVoice.I.stop();
+      await HajjSpeaker.I.stop();
     } catch (_) {}
   }
 }

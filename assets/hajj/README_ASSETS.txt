@@ -1,0 +1,1 @@
+Put clear JPG images step_1.jpg through step_8.jpg here (without mobile UI overlays).
