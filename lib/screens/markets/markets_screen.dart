@@ -159,25 +159,14 @@ class _MarketsScreenState extends State<MarketsScreen> {
                             _heading('بتدوري على إيه؟', 'اختاري اللي محتاجاه من الأسواق', Icons.shopping_bag_outlined),
                             const SizedBox(height: 11),
                             _categories(),
+                            const SizedBox(height: 9),
+                            _visualNote(),
                             const SizedBox(height: 22),
                             _quickLinks(),
-                            // MARKETS_FINAL_ACTIONS_V2
                             const SizedBox(height: 12),
                             if (_city == RifqaCity.makkah) ...[
                               _clockTowerLink(),
                               const SizedBox(height: 12),
-                            ],
-                            _communityHubActions(),
-                            const SizedBox(height: 12),
-                            _communityGuide(),
-                            const SizedBox(height: 18),
-                            _communityRecent(),
-                            const SizedBox(height: 23),
-                            if (_search.text.trim().isEmpty && !_onlyFavorites && !_onlyOfficial && _interest == 'الكل') ...[
-                              _heading('وجهات مميزة', 'مجمعات معروفة وأماكن للتسوق', Icons.auto_awesome_outlined),
-                              const SizedBox(height: 11),
-                              _featured(),
-                              const SizedBox(height: 23),
                             ],
                             _heading(_onlyFavorites ? 'أسواقي المحفوظة' : 'الأسواق في ${_city.title}',
                               '${_visible.length} سجلًا في الدليل • بيانات أولية', Icons.store_mall_directory_outlined),
@@ -191,6 +180,12 @@ class _MarketsScreenState extends State<MarketsScreen> {
                               )),
                             const SizedBox(height: 5),
                             _footnote(),
+                            const SizedBox(height: 18),
+                            _communityHubActions(),
+                            const SizedBox(height: 12),
+                            _communityGuide(),
+                            const SizedBox(height: 18),
+                            _communityRecent(),
                           ]),
                         ),
                       ),
@@ -308,6 +303,31 @@ class _MarketsScreenState extends State<MarketsScreen> {
       );
     },
   ));
+
+  Widget _visualNote() => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF2EEE4),
+          borderRadius: BorderRadius.circular(14),
+        ),
+        child: const Row(
+          children: [
+            Icon(Icons.auto_awesome_outlined,
+                size: 17, color: MarketPalette.emerald),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'الصور هنا رسومات توضيحية، وليست صورًا فعلية للمحلات.',
+                style: TextStyle(
+                  color: MarketPalette.muted,
+                  fontSize: 10.5,
+                  height: 1.4,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
 
   Widget _quickLinks() => Row(children: [
     Expanded(child: _actionLink('خريطة الأسواق', 'بحث ومواقع', Icons.map_outlined, _map)),
@@ -457,41 +477,6 @@ class _MarketsScreenState extends State<MarketsScreen> {
         ]),
       ));
 
-  Widget _featured() {
-    final parent = _all.where((m) => m.city == _city && !m.isSubMarket).toList();
-    parent.sort((a, b) {
-      if (a.officialSource == b.officialSource) return a.name.compareTo(b.name);
-      return a.officialSource ? -1 : 1;
-    });
-    final list = parent.take(7).toList();
-    return SizedBox(height: 204, child: ListView.separated(
-      scrollDirection: Axis.horizontal,
-      itemCount: list.length, separatorBuilder: (_, __) => const SizedBox(width: 10),
-      itemBuilder: (_, i) {
-        final m = list[i];
-        return InkWell(onTap: () => _details(m), borderRadius: BorderRadius.circular(20),
-          child: SizedBox(width: 161, child: MarketSoftCard(padding: const EdgeInsets.all(7), child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SizedBox(height: 115, child: Stack(children: [
-                m.id.contains('clock') ? const MarketClockArtwork() : MarketPhoto(image: m.assetImage, radius: 13),
-                Positioned(top: 4, left: 4, child: MarketFavoritesButton(
-                  selected: RifqaMarketSaved.instance.contains(m.id), onTap: () => _toggle(m))),
-              ])),
-              const SizedBox(height: 10),
-              Text(m.name, maxLines: 2, overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontWeight: FontWeight.w900, color: MarketPalette.ink, fontSize: 12)),
-              const Spacer(),
-              Text(m.area, maxLines: 1, overflow: TextOverflow.ellipsis,
-                style: const TextStyle(fontSize: 10, color: MarketPalette.muted)),
-              const SizedBox(height: 3),
-            ],
-          ))),
-        );
-      },
-    ));
-  }
-
   Widget _secondaryFilters() => SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: [
     MarketPill(label: 'جميع النتائج', icon: Icons.list_rounded,
       filled: !_onlyFavorites && !_onlyOfficial,
@@ -511,7 +496,7 @@ class _MarketsScreenState extends State<MarketsScreen> {
     borderRadius: BorderRadius.circular(20),
     child: MarketSoftCard(padding: const EdgeInsets.all(11),
       child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        SizedBox(width: 92, height: 105, child: Stack(children: [
+        SizedBox(width: 94, height: 108, child: Stack(children: [
           Positioned.fill(child: ClipRRect(borderRadius: BorderRadius.circular(13),
             child: m.id.contains('clock')
                 ? const MarketClockArtwork()
@@ -525,23 +510,23 @@ class _MarketsScreenState extends State<MarketsScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text(m.name, maxLines: 2, overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 13, height: 1.2,
+              style: const TextStyle(fontSize: 14, height: 1.25,
                 fontWeight: FontWeight.w900, color: MarketPalette.ink)),
             const SizedBox(height: 5),
             Text(m.area, maxLines: 1, overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 10,
+              style: const TextStyle(fontSize: 11,
                 color: MarketPalette.emerald,
                 fontWeight: FontWeight.w700)),
             const SizedBox(height: 5),
             Text(m.description, maxLines: 2, overflow: TextOverflow.ellipsis,
-              style: const TextStyle(fontSize: 10.5, height: 1.35,
+              style: const TextStyle(fontSize: 11.5, height: 1.4,
                 color: MarketPalette.muted)),
             const SizedBox(height: 6),
             Row(children: [
               Expanded(child: Text(m.isSubMarket
                     ? 'داخل مجمع آخر' : m.category,
                   maxLines: 1, overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 10,
+                  style: const TextStyle(fontSize: 10.5,
                     color: MarketPalette.ink,
                     fontWeight: FontWeight.w700))),
               const Icon(Icons.chevron_left_rounded, size: 16,

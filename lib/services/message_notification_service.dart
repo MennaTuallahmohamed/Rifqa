@@ -737,7 +737,8 @@ class MessageNotificationService with WidgetsBindingObserver {
   Future<void> _showForegroundNotification(RemoteMessage message) async {
     // The Firestore listeners display these while the app is foregrounded.
     // Avoid a duplicate notification for the same FCM delivery.
-    if (message.data['type'] == 'group_message' ||
+    if (message.data['type'] == 'community_activity' ||
+        message.data['type'] == 'group_message' ||
         message.data['type'] == 'direct_message') {
       return;
     }
@@ -750,6 +751,35 @@ class MessageNotificationService with WidgetsBindingObserver {
     if (title == null || body == null || !_notificationsAllowed) return;
 
     await _showLocal(title: title, body: body, data: message.data);
+  }
+
+  /// Foreground heads-up alert using Android notification styling.
+  /// A trusted FCM sender handles delivery while the app is closed.
+  Future<void> showCommunityReply({
+    required String senderName,
+    required String preview,
+    required String postId,
+    String kind = 'comment',
+    String? notificationId,
+  }) async {
+    if (!_initialized || !_notificationsAllowed || !_isForeground) return;
+    final action = switch (kind) {
+      'post_like' => 'أعجب بمنشورك',
+      'post_dislike' => 'تفاعل مع منشورك',
+      'comment_like' => 'أعجب بتعليقك',
+      'reply' => 'ردّ على تعليقك',
+      'friend_request' => 'أرسل لك طلب صداقة',
+      _ => 'علّق على منشورك',
+    };
+    await _showLocal(
+      title: '$senderName $action',
+      body: preview.trim().isEmpty ? 'عندك تفاعل جديد في مجتمع رفقة'
+          : preview.trim(),
+      data: {
+        'type': 'community_reply', 'postId': postId, 'kind': kind,
+        'notificationId': notificationId ?? '',
+      },
+    );
   }
 
   Future<void> _showLocal({

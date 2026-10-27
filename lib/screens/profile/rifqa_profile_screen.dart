@@ -1,5 +1,9 @@
+import 'dart:io';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../../services/profile/rifqa_profile_store.dart';
 import 'rifqa_profile_ui.dart';
@@ -23,6 +27,7 @@ class RifqaProfileScreen extends StatefulWidget {
 
 class _RifqaProfileScreenState extends State<RifqaProfileScreen> {
   final store = RifqaProfileStore.instance;
+  final _imagePicker = ImagePicker();
   @override
   void initState() { super.initState(); store.addListener(_refresh); store.load(); }
   void _refresh() { if (mounted) setState(() {}); }
@@ -41,18 +46,75 @@ class _RifqaProfileScreenState extends State<RifqaProfileScreen> {
     return firebaseName.isEmpty ? 'ضيف رِفقة' : firebaseName;
   }
 
+  Future<void> _pickProfilePhoto() async {
+    try {
+      final picked = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 60,
+        maxWidth: 512,
+        maxHeight: 512,
+      );
+      if (picked == null || !mounted) return;
+
+      final bytes = await picked.readAsBytes();
+      if (bytes.lengthInBytes > 240000) {
+        _showMessage('الصورة كبيرة؛ اختاري صورة أصغر من فضلك.');
+        return;
+      }
+
+      final directory = await getApplicationSupportDirectory();
+      final extension = picked.name.contains('.')
+          ? picked.name.split('.').last.toLowerCase()
+          : 'jpg';
+      final safeExtension =
+          RegExp(r'^[a-z0-9]{1,5}$').hasMatch(extension) ? extension : 'jpg';
+      final imageFile = File(
+        '${directory.path}${Platform.pathSeparator}rifqa_profile_avatar.$safeExtension',
+      );
+      await imageFile.writeAsBytes(bytes, flush: true);
+      await store.saveProfileImagePath(imageFile.path);
+      if (mounted) _showMessage('تم حفظ صورتك الشخصية على الجهاز 💚');
+    } catch (error) {
+      if (mounted) _showMessage('تعذّر حفظ الصورة. حاولي مرة أخرى.');
+      debugPrint('Rifqa profile image save error: $error');
+    }
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+
   Widget _profileAvatar() {
+    final localPath = store.profileImagePath;
     final photo = currentUser?.photoURL;
     return Container(
       width: 89, height: 89, padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(shape: BoxShape.circle, color: Rp.cream,
         border: Border.all(color: Rp.gold, width: 2)),
-      child: ClipOval(child: photo != null && photo.isNotEmpty
-        ? Image.network(photo, fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => const ColoredBox(color: Rp.mint, child: Icon(Icons.person_rounded, size: 49, color: Rp.green)))
-        : const ColoredBox(color: Rp.mint, child: Icon(Icons.person_rounded, size: 49, color: Rp.green))),
+      child: ClipOval(
+        child: localPath.isNotEmpty
+            ? Image.file(
+                File(localPath),
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _avatarPlaceholder(),
+              )
+            : photo != null && photo.isNotEmpty
+                ? Image.network(
+                    photo,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => _avatarPlaceholder(),
+                  )
+                : _avatarPlaceholder(),
+      ),
     );
   }
+
+  Widget _avatarPlaceholder() => const ColoredBox(
+        color: Rp.mint,
+        child: Icon(Icons.person_rounded, size: 49, color: Rp.green),
+      );
 
   Widget _hero(BuildContext context) => Container(
     height: 335, decoration: const BoxDecoration(borderRadius: BorderRadius.only(
@@ -80,7 +142,33 @@ class _RifqaProfileScreenState extends State<RifqaProfileScreen> {
               icon: const Icon(Icons.settings_outlined)),
           ]),
           const Spacer(),
-          _profileAvatar(),
+          GestureDetector(
+            onTap: _pickProfilePhoto,
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                _profileAvatar(),
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  child: Container(
+                    width: 29,
+                    height: 29,
+                    decoration: BoxDecoration(
+                      color: Rp.gold,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Rp.deep, width: 2),
+                    ),
+                    child: const Icon(
+                      Icons.camera_alt_rounded,
+                      color: Colors.white,
+                      size: 15,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
           const SizedBox(height: 8),
           Text(displayName, style: Rp.style(20, color: Colors.white, weight: FontWeight.w900),
             maxLines: 1, overflow: TextOverflow.ellipsis),
@@ -121,7 +209,7 @@ class _RifqaProfileScreenState extends State<RifqaProfileScreen> {
           ]))),
       Padding(padding: const EdgeInsets.all(15), child: Column(children: [
         Row(children: [
-          Expanded(child: _infoTile(icon: Icons.apartment_rounded, label: 'الفندق',
+          Expanded(child: _infoTile(icon: Icons.apartment_rounded, label: 'الفندق الأساسي',
             value: t.hotelName.isEmpty ? 'أضيفي فندقك' : t.hotelName)),
           const SizedBox(width: 8),
           Expanded(child: _infoTile(icon: Icons.meeting_room_outlined, label: 'الغرفة',
@@ -130,12 +218,47 @@ class _RifqaProfileScreenState extends State<RifqaProfileScreen> {
           Expanded(child: _infoTile(icon: Icons.layers_outlined, label: 'الدور',
             value: t.floor.isEmpty ? '—' : t.floor)),
         ]),
+        if (t.hotelAddress.trim().isNotEmpty ||
+            t.madinahHotelName.trim().isNotEmpty ||
+            t.madinahHotelAddress.trim().isNotEmpty) ...[
+          const SizedBox(height: 12),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Rp.cream,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (t.hotelAddress.trim().isNotEmpty)
+                  _hotelDetail('عنوان الفندق الأساسي', t.hotelAddress),
+                if (t.madinahHotelName.trim().isNotEmpty)
+                  _hotelDetail('فندق المدينة', t.madinahHotelName),
+                if (t.madinahHotelAddress.trim().isNotEmpty)
+                  _hotelDetail('عنوان فندق المدينة', t.madinahHotelAddress),
+              ],
+            ),
+          ),
+        ],
         const SizedBox(height: 13),
         RpPrimaryButton(label: t.hasTrip ? 'عرض وتعديل تفاصيل الرحلة' : 'أضيفي بيانات رحلتك',
           icon: Icons.arrow_back_rounded, onPressed: () => go(const RifqaTripDetailsScreen())),
       ])),
     ]));
   }
+
+  Widget _hotelDetail(String label, String value) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: 3),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('$label: ', style: Rp.style(11, color: Rp.muted)),
+            Expanded(child: Text(value, style: Rp.style(11.5, weight: FontWeight.w800))),
+          ],
+        ),
+      );
 
   Widget _infoTile({required IconData icon, required String label, required String value}) =>
     Container(padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 11),

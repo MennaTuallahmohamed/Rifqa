@@ -46,7 +46,8 @@ service cloud.firestore {
       allow create: if verified()
         && request.resource.data.keys().hasOnly([
           'authorId', 'authorName', 'body', 'category', 'kind',
-          'location', 'imageBase64', 'createdAt', 'spamReporters', 'isHidden'])
+          'location', 'imageBase64', 'avatarBase64', 'createdAt',
+          'spamReporters', 'isHidden'])
         && request.resource.data.keys().hasAll([
           'authorId', 'authorName', 'body', 'category', 'kind',
           'location', 'createdAt', 'spamReporters', 'isHidden'])
@@ -64,6 +65,9 @@ service cloud.firestore {
         && (!request.resource.data.keys().hasAny(['imageBase64'])
           || (request.resource.data.imageBase64 is string
               && request.resource.data.imageBase64.size() <= 340000))
+        && (!request.resource.data.keys().hasAny(['avatarBase64'])
+          || (request.resource.data.avatarBase64 is string
+              && request.resource.data.avatarBase64.size() <= 340000))
         && request.resource.data.createdAt == request.time
         && request.resource.data.spamReporters == []
         && request.resource.data.isHidden == false;
@@ -115,7 +119,8 @@ service cloud.firestore {
         allow create: if verified()
           && exists(/databases/$(database)/documents/community_posts/$(postId))
           && request.resource.data.keys().hasOnly([
-            'authorId', 'authorName', 'body', 'createdAt'])
+            'authorId', 'authorName', 'avatarBase64', 'body',
+            'createdAt', 'parentCommentId'])
           && request.resource.data.keys().hasAll([
             'authorId', 'authorName', 'body', 'createdAt'])
           && request.resource.data.authorId == request.auth.uid
@@ -125,10 +130,31 @@ service cloud.firestore {
           && request.resource.data.body is string
           && request.resource.data.body.size() > 0
           && request.resource.data.body.size() <= 500
-          && request.resource.data.createdAt == request.time;
+          && (!request.resource.data.keys().hasAny(['avatarBase64'])
+              || (request.resource.data.avatarBase64 is string
+                  && request.resource.data.avatarBase64.size() <= 340000))
+          && request.resource.data.createdAt == request.time
+          && (!request.resource.data.keys().hasAny(['parentCommentId'])
+              || (request.resource.data.parentCommentId is string
+                  && request.resource.data.parentCommentId.size() > 0
+                  && exists(/databases/$(database)/documents/community_posts/$(postId)/comments/$(request.resource.data.parentCommentId))
+                  && !get(/databases/$(database)/documents/community_posts/$(postId)/comments/$(request.resource.data.parentCommentId)).data.keys().hasAny(['parentCommentId'])));
         allow update: if false;
         allow delete: if verified() && resource.data.authorId == request.auth.uid;
+
+        match /likes/{likerUid} {
+          allow get, list: if verified()
+            && exists(/databases/$(database)/documents/community_posts/$(postId)/comments/$(commentId));
+          allow create: if verified() && request.auth.uid == likerUid
+            && exists(/databases/$(database)/documents/community_posts/$(postId)/comments/$(commentId))
+            && request.resource.data.keys().hasOnly(['createdAt'])
+            && request.resource.data.keys().hasAll(['createdAt'])
+            && request.resource.data.createdAt == request.time;
+          allow update: if false;
+          allow delete: if verified() && request.auth.uid == likerUid;
+        }
       }
+
       match /reports/{uid} {
         allow read: if false;
         allow create: if verified() && request.auth.uid == uid
@@ -162,6 +188,92 @@ service cloud.firestore {
         && request.resource.data.phoneVerified == false
         && request.resource.data.createdAt == request.time;
       allow update, delete: if false;
+
+      // V7: authentic, owner-only activity inbox. Notification creation is
+      // linked to a freshly-created Firestore event in the SAME atomic batch.
+      match /community_notifications/{notificationId} {
+        allow get, list: if verified() && myself(uid);
+        allow create: if verified()
+          && request.resource.data.keys().hasOnly([
+            'kind','postId','commentId','replyTo','recipientId','senderId',
+            'senderName','body','read','createdAt'])
+          && request.resource.data.keys().hasAll([
+            'kind','postId','commentId','replyTo','recipientId','senderId',
+            'senderName','body','read','createdAt'])
+          && request.resource.data.recipientId == uid
+          && request.resource.data.senderId == request.auth.uid
+          && request.auth.uid != uid
+          && request.resource.data.kind in [
+            'comment','reply','post_like','post_dislike',
+            'comment_like','friend_request']
+          && request.resource.data.postId is string
+          && request.resource.data.postId.size() > 0
+          && request.resource.data.commentId is string
+          && request.resource.data.replyTo is string
+          && request.resource.data.senderName is string
+          && request.resource.data.senderName.size() > 0
+          && request.resource.data.senderName.size() <= 80
+          && request.resource.data.body is string
+          && request.resource.data.body.size() <= 500
+          && request.resource.data.read == false
+          && request.resource.data.createdAt == request.time
+          && exists(/databases/$(database)/documents/community_posts/$(request.resource.data.postId))
+          && (
+            (request.resource.data.kind == 'comment'
+              && request.resource.data.commentId.size() > 0
+              && get(/databases/$(database)/documents/community_posts/$(request.resource.data.postId)).data.authorId == uid
+              && getAfter(/databases/$(database)/documents/community_posts/$(request.resource.data.postId)/comments/$(request.resource.data.commentId)).data.authorId == request.auth.uid
+              && getAfter(/databases/$(database)/documents/community_posts/$(request.resource.data.postId)/comments/$(request.resource.data.commentId)).data.body == request.resource.data.body
+              && getAfter(/databases/$(database)/documents/community_posts/$(request.resource.data.postId)/comments/$(request.resource.data.commentId)).data.authorName == request.resource.data.senderName
+              && getAfter(/databases/$(database)/documents/community_posts/$(request.resource.data.postId)/comments/$(request.resource.data.commentId)).data.createdAt == request.time
+              && getAfter(/databases/$(database)/documents/community_posts/$(request.resource.data.postId)/comments/$(request.resource.data.commentId)).data.get('parentCommentId', '') == request.resource.data.replyTo)
+            ||
+            (request.resource.data.kind == 'reply'
+              && request.resource.data.commentId.size() > 0
+              && request.resource.data.replyTo.size() > 0
+              && get(/databases/$(database)/documents/community_posts/$(request.resource.data.postId)/comments/$(request.resource.data.replyTo)).data.authorId == uid
+              && getAfter(/databases/$(database)/documents/community_posts/$(request.resource.data.postId)/comments/$(request.resource.data.commentId)).data.authorId == request.auth.uid
+              && getAfter(/databases/$(database)/documents/community_posts/$(request.resource.data.postId)/comments/$(request.resource.data.commentId)).data.get('parentCommentId', '') == request.resource.data.replyTo
+              && getAfter(/databases/$(database)/documents/community_posts/$(request.resource.data.postId)/comments/$(request.resource.data.commentId)).data.authorName == request.resource.data.senderName
+              && getAfter(/databases/$(database)/documents/community_posts/$(request.resource.data.postId)/comments/$(request.resource.data.commentId)).data.body == request.resource.data.body
+              && getAfter(/databases/$(database)/documents/community_posts/$(request.resource.data.postId)/comments/$(request.resource.data.commentId)).data.createdAt == request.time)
+            ||
+            (request.resource.data.kind == 'post_like'
+              && request.resource.data.commentId == ''
+              && request.resource.data.replyTo == ''
+              && request.resource.data.body == ''
+              && get(/databases/$(database)/documents/community_posts/$(request.resource.data.postId)).data.authorId == uid
+              && getAfter(/databases/$(database)/documents/community_posts/$(request.resource.data.postId)/likes/$(request.auth.uid)).data.createdAt == request.time)
+            ||
+            (request.resource.data.kind == 'post_dislike'
+              && request.resource.data.commentId == ''
+              && request.resource.data.replyTo == ''
+              && request.resource.data.body == ''
+              && get(/databases/$(database)/documents/community_posts/$(request.resource.data.postId)).data.authorId == uid
+              && getAfter(/databases/$(database)/documents/community_posts/$(request.resource.data.postId)/dislikes/$(request.auth.uid)).data.createdAt == request.time)
+            ||
+            (request.resource.data.kind == 'comment_like'
+              && request.resource.data.commentId.size() > 0
+              && request.resource.data.replyTo == ''
+              && request.resource.data.body == ''
+              && get(/databases/$(database)/documents/community_posts/$(request.resource.data.postId)/comments/$(request.resource.data.commentId)).data.authorId == uid
+              && getAfter(/databases/$(database)/documents/community_posts/$(request.resource.data.postId)/comments/$(request.resource.data.commentId)/likes/$(request.auth.uid)).data.createdAt == request.time)
+            ||
+            (request.resource.data.kind == 'friend_request'
+              && request.resource.data.commentId == ''
+              && request.resource.data.replyTo == ''
+              && request.resource.data.body == ''
+              && get(/databases/$(database)/documents/community_posts/$(request.resource.data.postId)).data.authorId == uid
+              && getAfter(/databases/$(database)/documents/friend_requests/$(request.auth.uid + '_' + uid)).data.fromUid == request.auth.uid
+              && getAfter(/databases/$(database)/documents/friend_requests/$(request.auth.uid + '_' + uid)).data.toUid == uid
+              && getAfter(/databases/$(database)/documents/friend_requests/$(request.auth.uid + '_' + uid)).data.createdAt == request.time)
+          );
+        allow update: if verified() && myself(uid)
+          && resource.data.read == false
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])
+          && request.resource.data.read == true;
+        allow delete: if verified() && myself(uid);
+      }
 
       match /fcm_tokens/{tokenId} {
         allow read, delete: if verified() && myself(uid);

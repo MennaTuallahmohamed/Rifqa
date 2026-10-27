@@ -64,3 +64,25 @@ key.properties
 
 *.apk
 *.aab
+*.apk
+*.aab
+*.zip
+.env
+.env.*
+community_*_backup_*/
+build/
+.dart_tool/
+*.apk
+*.aab
+*.zip
+.env
+.env.*
+*.jks
+*.keystore
+*.pem
+*service-account*.json
+*serviceAccount*.json
+community_*_backup_*/
+**/node_modules/
+**/build/
+.dart_tool/

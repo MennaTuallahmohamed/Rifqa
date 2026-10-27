@@ -7,8 +7,10 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 // Rifqa Community FINAL V5: Firebase live feed, no legacy bottom tabs.
+// V7_ACTIVITY_PATCH
 import '../../services/community/community_service.dart';
 import '../groups/friends_screen.dart';
+import 'community_notifications_sheet.dart';
 
 class _C {
   static const forest = Color(0xFF075246);
@@ -23,7 +25,8 @@ class _C {
 }
 
 class CommunityScreen extends StatefulWidget {
-  const CommunityScreen({super.key});
+  const CommunityScreen({super.key, this.initialPostId});
+  final String? initialPostId;
 
   @override
   State<CommunityScreen> createState() => _CommunityScreenState();
@@ -41,6 +44,46 @@ class _CommunityScreenState extends State<CommunityScreen> {
   void initState() {
     super.initState();
     _refreshVerification();
+    if (widget.initialPostId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _openComments(widget.initialPostId!);
+      });
+    }
+  }
+
+  void _openComments(String postId) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: _C.cream,
+      builder: (_) => _CommentsSheet(postId: postId),
+    );
+  }
+
+  Future<void> _openReplyNotifications() async {
+    final current = FirebaseAuth.instance.currentUser;
+    if (current == null || current.isAnonymous || !current.emailVerified) {
+      _showError(StateError('أكّدي البريد الإلكتروني أولًا لعرض الإشعارات.'));
+      return;
+    }
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => CommunityNotificationsSheet(
+        onOpenPost: (postId) {
+          if (mounted) _openComments(postId);
+        },
+        onOpenFriends: () {
+          if (!mounted) return;
+          Navigator.of(context).push(MaterialPageRoute<void>(
+            builder: (_) => const FriendsScreen(),
+          ));
+        },
+      ),
+    );
   }
 
   Future<void> _refreshVerification() async {
@@ -74,6 +117,39 @@ class _CommunityScreenState extends State<CommunityScreen> {
   Future<void> _compose() async {
     try {
       _svc.member;
+      final accepted = await showDialog<bool>(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('قواعد مجتمع رفقة'),
+          content: const SingleChildScrollView(child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('قبل النشر، يُرجى الالتزام بالقواعد التالية:'),
+              SizedBox(height: 12),
+              Text('• الاحترام ممنوع الإساءة والتنمر.'),
+              SizedBox(height: 7),
+              Text('• ممنوع الإعلانات المزعجة والروابط الاحتيالية.'),
+              SizedBox(height: 7),
+              Text('• لا تنشر أرقام أشخاص أو بيانات خاصة بدون إذن.'),
+              SizedBox(height: 7),
+              Text('• انشر معلومات صحيحة قدر الإمكان، خصوصًا ما يتعلق بالمناسك.'),
+              SizedBox(height: 7),
+              Text('• 4 بلاغات Spam من حسابات مختلفة تُخفي المنشور.'),
+              SizedBox(height: 12),
+              Text('يمكن نشر النص والصورة مباشرة دون موافقة مسبقة.'),
+            ],
+          )),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext, false),
+              child: const Text('إلغاء')),
+            FilledButton(onPressed: () => Navigator.pop(dialogContext, true),
+              child: const Text('أوافق وأكمل')),
+          ],
+        ),
+      );
+      if (accepted != true || !mounted) return;
       await showModalBottomSheet<void>(
         context: context,
         isScrollControlled: true,
@@ -276,6 +352,28 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       style: TextStyle(color: Colors.white, fontSize: 26,
                           fontWeight: FontWeight.w900)),
                   const Spacer(),
+                  StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                    stream: FirebaseAuth.instance.currentUser?.emailVerified == true
+                        ? _svc.myReplyNotifications() : null,
+                    builder: (context, snap) {
+                      final unread = snap.data?.docs.where((d) => d.data()['read'] == false).length ?? 0;
+                      return Stack(clipBehavior: Clip.none, children: [
+                        IconButton(
+                          tooltip: 'إشعارات المجتمع',
+                          onPressed: _openReplyNotifications,
+                          icon: const Icon(Icons.notifications_outlined,
+                              color: Colors.white, size: 24),
+                        ),
+                        if (unread > 0)
+                          Positioned(top: 0, left: 0, child: CircleAvatar(
+                            radius: 9, backgroundColor: _C.gold,
+                            child: Text(unread > 9 ? '9+' : '$unread',
+                              style: const TextStyle(color: _C.deep,
+                                  fontSize: 9, fontWeight: FontWeight.bold)),
+                          )),
+                      ]);
+                    },
+                  ),
                   IconButton(
                     tooltip: 'بحث',
                     onPressed: () => setState(() => _searchOpen = !_searchOpen),
@@ -646,6 +744,24 @@ class _PostCardState extends State<_PostCard> {
             ),
           ),
         ]),
+        if (authorId.isNotEmpty && authorId != FirebaseAuth.instance.currentUser?.uid) ...[
+          const Divider(height: 18, color: _C.border),
+          Align(alignment: Alignment.centerRight,
+            child: OutlinedButton.icon(
+              icon: const Icon(Icons.person_add_alt_1_rounded, size: 18),
+              label: const Text('إضافة صديق'),
+              onPressed: () async {
+                try {
+                  final result = await svc.requestFriendFromPost(
+                      postId: widget.doc.id, targetUid: authorId);
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result)));
+                  }
+                } catch (e) { widget.onError(e); }
+              },
+            ),
+          ),
+        ],
       ]),
     );
   }
@@ -713,7 +829,7 @@ class _ComposerState extends State<_Composer> {
             onSelected: (_) => setState(() => _kind = k),
             showCheckmark: false, selectedColor: _C.jade)]),
         DropdownButtonFormField<String>(
-          value: _category,
+          initialValue: _category,
           decoration: const InputDecoration(labelText: 'القسم'),
           items: [for (final c in CommunityService.categories)
             DropdownMenuItem(value: c, child: Text(c))],
@@ -756,7 +872,10 @@ class _CommentsSheet extends StatefulWidget {
 
 class _CommentsSheetState extends State<_CommentsSheet> {
   final _text = TextEditingController();
+  final _inputFocus = FocusNode();
   bool _busy = false;
+  String? _replyToId;
+  String? _replyToName;
   late final Stream<QuerySnapshot<Map<String, dynamic>>> _commentsStream;
 
   @override
@@ -766,61 +885,176 @@ class _CommentsSheetState extends State<_CommentsSheet> {
   }
 
   @override
-  void dispose() { _text.dispose(); super.dispose(); }
+  void dispose() {
+    _text.dispose();
+    _inputFocus.dispose();
+    super.dispose();
+  }
+
+  void _reply(String id, String name) {
+    setState(() { _replyToId = id; _replyToName = name; });
+    _inputFocus.requestFocus();
+  }
 
   Future<void> _send() async {
     if (_busy) return;
     setState(() => _busy = true);
     try {
-      await CommunityService.instance.addComment(widget.postId, _text.text);
+      await CommunityService.instance.addComment(
+        widget.postId, _text.text, parentCommentId: _replyToId);
+      if (!mounted) return;
       _text.clear();
+      _inputFocus.unfocus();
+      setState(() { _replyToId = null; _replyToName = null; });
     } catch (e) {
       if (mounted) ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e is StateError ? e.message : '$e')));
     } finally { if (mounted) setState(() => _busy = false); }
   }
 
+  Widget _commentCard(QueryDocumentSnapshot<Map<String, dynamic>> doc,
+      {required bool isReply, String? parentName}) {
+    final d = doc.data();
+    final author = (d['authorName'] ?? 'عضو رفقة').toString();
+    return Padding(
+      padding: EdgeInsets.only(bottom: 10, right: isReply ? 25 : 0),
+      child: Container(
+        decoration: BoxDecoration(
+          color: isReply ? const Color(0xFFEAF4ED) : Colors.white,
+          border: Border.all(color: _C.border),
+          borderRadius: BorderRadius.circular(17)),
+        padding: const EdgeInsets.fromLTRB(11, 12, 11, 10),
+        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const CircleAvatar(radius: 19, backgroundColor: _C.jade,
+              child: Icon(Icons.person, size: 20, color: _C.forest)),
+          const SizedBox(width: 9),
+          Expanded(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(author, style: const TextStyle(color: _C.deep,
+                fontWeight: FontWeight.w800, fontSize: 13)),
+            if (isReply && parentName != null)
+              Text('رد على $parentName', style: const TextStyle(
+                  color: _C.teal, fontSize: 11)),
+            const SizedBox(height: 4),
+            Text((d['body'] ?? '').toString(), style: const TextStyle(
+                color: _C.ink, height: 1.45)),
+            const SizedBox(height: 5),
+            Row(children: [
+              if (!isReply)
+                TextButton.icon(
+                  onPressed: () => _reply(doc.id, author),
+                  icon: const Icon(Icons.reply_rounded, size: 16),
+                  label: const Text('رد'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: _C.teal, visualDensity: VisualDensity.compact),
+                ),
+              const Spacer(),
+              StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                stream: CommunityService.instance.commentLikes(widget.postId, doc.id),
+                builder: (ctx, snap) {
+                  final liked = snap.data?.docs.any(
+                    (x) => x.id == FirebaseAuth.instance.currentUser?.uid) ?? false;
+                  final count = snap.data?.docs.length ?? 0;
+                  return TextButton.icon(
+                    onPressed: () async {
+                      try {
+                        await CommunityService.instance.toggleCommentLike(
+                            widget.postId, doc.id, liked);
+                      } catch (e) {
+                        if (mounted) ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(content: Text('$e')));
+                      }
+                    },
+                    icon: Icon(liked ? Icons.favorite_rounded :
+                        Icons.favorite_border_rounded,
+                        size: 17, color: liked ? const Color(0xFFE05268) : _C.muted),
+                    label: Text('$count', style: TextStyle(fontSize: 12,
+                        color: liked ? const Color(0xFFE05268) : _C.muted)),
+                    style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                  );
+                },
+              ),
+            ]),
+          ])),
+        ]),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) => Directionality(
-      textDirection: TextDirection.rtl,
-      child: FractionallySizedBox(heightFactor: .76,
-        child: Padding(padding: EdgeInsets.only(left: 16, right: 16,
-            bottom: MediaQuery.viewInsetsOf(context).bottom + 12),
-          child: Column(children: [
-            const Text('التعليقات', style: TextStyle(fontSize: 19,
-                fontWeight: FontWeight.w900, color: _C.deep)),
-            const Divider(height: 24),
-            Expanded(child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
-              stream: _commentsStream,
-              builder: (context, snap) {
-                if (snap.hasError) return Center(child: Text('تعذر تحميل التعليقات: ${snap.error}'));
-                if (!snap.hasData) return const Center(child: CircularProgressIndicator());
-                final items = snap.data!.docs;
-                if (items.isEmpty) return const Center(child: Text('كوني أول من يعلق'));
-                return ListView.builder(itemCount: items.length, itemBuilder: (_, i) {
-                  final d = items[i].data();
-                  return ListTile(
-                    leading: const CircleAvatar(backgroundColor: _C.jade,
-                        child: Icon(Icons.person, color: _C.forest)),
-                    title: Text('${d['authorName'] ?? 'عضو'}',
-                        style: const TextStyle(fontWeight: FontWeight.w800)),
-                    subtitle: Text('${d['body'] ?? ''}'),
-                  );
-                });
-              },
-            )),
-            Row(children: [
-              Expanded(child: TextField(controller: _text, maxLength: 500,
-                minLines: 1, maxLines: 3,
-                decoration: const InputDecoration(hintText: 'اكتبي تعليقًا...',
-                    counterText: '', filled: true, fillColor: Colors.white,
-                    border: OutlineInputBorder()))),
-              const SizedBox(width: 8),
-              IconButton.filled(onPressed: _busy ? null : _send,
-                  style: IconButton.styleFrom(backgroundColor: _C.teal),
-                  icon: const Icon(Icons.send_rounded)),
-            ]),
+    textDirection: TextDirection.rtl,
+    child: FractionallySizedBox(
+      heightFactor: .82,
+      child: Padding(padding: EdgeInsets.only(left: 15, right: 15,
+          bottom: MediaQuery.viewInsetsOf(context).bottom + 10),
+        child: Column(children: [
+          const Text('التعليقات والردود', style: TextStyle(
+              fontSize: 19, fontWeight: FontWeight.w900, color: _C.deep)),
+          const Divider(height: 24),
+          Expanded(child: StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+            stream: _commentsStream,
+            builder: (context, snap) {
+              if (snap.hasError) return Center(child: Text(
+                'تعذر تحميل التعليقات: ${snap.error}', textAlign: TextAlign.center));
+              if (!snap.hasData) return const Center(child: CircularProgressIndicator());
+              final items = snap.data!.docs;
+              if (items.isEmpty) return const Center(child: Text('كوني أول من يعلق'));
+              final byId = {for (final doc in items) doc.id: doc};
+              final ordered = <QueryDocumentSnapshot<Map<String, dynamic>>>[];
+              for (final doc in items) {
+                final parentId = (doc.data()['parentCommentId'] ?? '').toString();
+                if (parentId.isEmpty || !byId.containsKey(parentId)) {
+                  ordered.add(doc);
+                  if (parentId.isEmpty) {
+                    ordered.addAll(items.where((reply) =>
+                        reply.data()['parentCommentId'] == doc.id));
+                  }
+                }
+              }
+              return ListView.builder(
+                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                itemCount: ordered.length,
+                itemBuilder: (_, i) {
+                  final doc = ordered[i];
+                  final parentId = (doc.data()['parentCommentId'] ?? '').toString();
+                  return _commentCard(doc, isReply: parentId.isNotEmpty,
+                      parentName: byId[parentId]?.data()['authorName']?.toString());
+                },
+              );
+            },
+          )),
+          if (_replyToId != null)
+            Container(padding: const EdgeInsets.symmetric(horizontal: 6),
+              color: _C.jade,
+              child: Row(children: [
+                const Icon(Icons.reply_rounded, size: 18, color: _C.forest),
+                const SizedBox(width: 5),
+                Expanded(child: Text('الرد على $_replyToName',
+                    style: const TextStyle(fontSize: 12, color: _C.deep))),
+                IconButton(tooltip: 'إلغاء الرد',
+                    onPressed: () => setState(() {
+                      _replyToId = null; _replyToName = null;
+                    }), icon: const Icon(Icons.close_rounded, size: 18)),
+              ]),
+            ),
+          const SizedBox(height: 6),
+          Row(children: [
+            Expanded(child: TextField(controller: _text, focusNode: _inputFocus,
+              maxLength: 500, minLines: 1, maxLines: 3,
+              decoration: InputDecoration(
+                hintText: _replyToId == null ? 'اكتبي تعليقًا...' : 'اكتبي ردّك...',
+                counterText: '', filled: true, fillColor: Colors.white,
+                border: const OutlineInputBorder()))),
+            const SizedBox(width: 8),
+            IconButton.filled(onPressed: _busy ? null : _send,
+                style: IconButton.styleFrom(backgroundColor: _C.teal),
+                icon: _busy ? const SizedBox(height: 16, width: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2)) :
+                  const Icon(Icons.send_rounded)),
           ]),
-        ),
-      ));
+        ]),
+      ),
+    ),
+  );
 }

@@ -1,0 +1,7 @@
+name = "rifqa-community-push"
+main = "index.mjs"
+compatibility_date = "2026-10-27"
+workers_dev = true
+
+[vars]
+FIREBASE_PROJECT_ID = "rifqa-24304"

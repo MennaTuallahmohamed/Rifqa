@@ -14,6 +14,7 @@
 //   NSSpeechRecognitionUsageDescription = "نحوّل صوتك إلى نص لنجيب عن سؤالك"
 
 import 'dart:async';
+import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -417,21 +418,228 @@ class _AskRifqaScreenState extends State<AskRifqaScreen>
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: TextDirection.rtl,
-      child: Scaffold(
-        backgroundColor: _cream,
-        appBar: _buildAppBar(),
-        body: Column(
-          children: [
-            const _SafetyStrip(),
-            Expanded(
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 250),
-                child: _messages.isEmpty ? _buildWelcome() : _buildChat(),
+      child: Stack(
+        children: [
+          Scaffold(
+            backgroundColor: _cream,
+            appBar: _buildAppBar(),
+            body: Column(
+              children: [
+                const _SafetyStrip(),
+                Expanded(
+                  child: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 250),
+                    child: _messages.isEmpty ? _buildWelcome() : _buildChat(),
+                  ),
+                ),
+                _buildComposer(),
+              ],
+            ),
+          ),
+          Positioned.fill(
+            child: AbsorbPointer(
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 3, sigmaY: 3),
+                child: Container(
+                  color: const Color(0xCCFAF7F0),
+                  child: SafeArea(
+                    child: Center(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.all(24),
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 360),
+                          child: Container(
+                            padding: const EdgeInsets.fromLTRB(26, 30, 26, 26),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withValues(alpha: .94),
+                              borderRadius: BorderRadius.circular(32),
+                              border: Border.all(
+                                color: _gold.withValues(alpha: .35),
+                                width: 1.4,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.green.withValues(alpha: .12),
+                                  blurRadius: 32,
+                                  offset: const Offset(0, 14),
+                                ),
+                              ],
+                            ),
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                SizedBox(
+                                  width: 142,
+                                  height: 142,
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      Container(
+                                        width: 112,
+                                        height: 112,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          gradient: LinearGradient(
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
+                                            colors: [
+                                              AppColors.softGreen,
+                                              AppColors.softGold.withValues(
+                                                alpha: .8,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      Container(
+                                        width: 78,
+                                        height: 78,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: AppColors.green,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: AppColors.green.withValues(
+                                                alpha: .22,
+                                              ),
+                                              blurRadius: 18,
+                                              offset: const Offset(0, 7),
+                                            ),
+                                          ],
+                                        ),
+                                        child: const Icon(
+                                          Icons.chat_bubble_rounded,
+                                          color: Colors.white,
+                                          size: 37,
+                                        ),
+                                      ),
+                                      const Positioned(
+                                        top: 10,
+                                        right: 12,
+                                        child: Icon(
+                                          Icons.auto_awesome_rounded,
+                                          color: _gold,
+                                          size: 25,
+                                        ),
+                                      ),
+                                      const Positioned(
+                                        bottom: 13,
+                                        left: 12,
+                                        child: Icon(
+                                          Icons.favorite_rounded,
+                                          color: Color(0xFFE99B9B),
+                                          size: 20,
+                                        ),
+                                      ),
+                                      Positioned(
+                                        bottom: 20,
+                                        right: 14,
+                                        child: Container(
+                                          width: 34,
+                                          height: 34,
+                                          decoration: BoxDecoration(
+                                            color: Colors.white,
+                                            shape: BoxShape.circle,
+                                            border: Border.all(
+                                              color: AppColors.softGreen,
+                                              width: 2,
+                                            ),
+                                          ),
+                                          child: const Icon(
+                                            Icons.lock_rounded,
+                                            color: AppColors.green,
+                                            size: 17,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 15,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.softGold,
+                                    borderRadius: BorderRadius.circular(30),
+                                  ),
+                                  child: const Text(
+                                    'COMING SOON',
+                                    textDirection: TextDirection.ltr,
+                                    style: TextStyle(
+                                      color: AppColors.greenDark,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w900,
+                                      letterSpacing: 1.5,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 18),
+                                const Text(
+                                  'رفقة الذكية',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: _ink,
+                                    fontSize: 27,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                                const SizedBox(height: 10),
+                                const Text(
+                                  'بنجهّزلك تجربة حلوة ومميزة، عشان رفقة تكون معاكي في كل سؤال 💚',
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    color: AppColors.muted,
+                                    fontSize: 15,
+                                    height: 1.8,
+                                  ),
+                                ),
+                                const SizedBox(height: 20),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 11,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.softGreen.withValues(
+                                      alpha: .75,
+                                    ),
+                                    borderRadius: BorderRadius.circular(18),
+                                  ),
+                                  child: const Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        Icons.favorite_rounded,
+                                        color: AppColors.green,
+                                        size: 17,
+                                      ),
+                                      SizedBox(width: 7),
+                                      Text(
+                                        'استنينا قريب.. المفاجأة تستاهل',
+                                        style: TextStyle(
+                                          color: AppColors.greenDark,
+                                          fontSize: 12.5,
+                                          fontWeight: FontWeight.w700,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
               ),
             ),
-            _buildComposer(),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

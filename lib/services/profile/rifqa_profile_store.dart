@@ -13,6 +13,8 @@ class RifqaTripInfo {
     this.floor = '',
     this.building = '',
     this.hotelAddress = '',
+    this.madinahHotelName = '',
+    this.madinahHotelAddress = '',
     this.hotelPhone = '',
     this.guideName = '',
     this.guidePhone = '',
@@ -29,6 +31,8 @@ class RifqaTripInfo {
   final String floor;
   final String building;
   final String hotelAddress;
+  final String madinahHotelName;
+  final String madinahHotelAddress;
   final String hotelPhone;
   final String guideName;
   final String guidePhone;
@@ -38,12 +42,14 @@ class RifqaTripInfo {
   final String embassyName;
   final String embassyPhone;
 
-  bool get hasTrip => [tripName, hotelName, roomNumber, floor, building,
+  bool get hasTrip => [tripName, hotelName, madinahHotelName, roomNumber, floor, building,
     hotelPhone, guideName, guidePhone, groupLeaderPhone].any((s) => s.trim().isNotEmpty);
 
   Map<String, String> toJson() => {
     'tripName': tripName, 'hotelName': hotelName, 'roomNumber': roomNumber,
     'floor': floor, 'building': building, 'hotelAddress': hotelAddress,
+    'madinahHotelName': madinahHotelName,
+    'madinahHotelAddress': madinahHotelAddress,
     'hotelPhone': hotelPhone, 'guideName': guideName,
     'guidePhone': guidePhone, 'groupLeaderPhone': groupLeaderPhone,
     'emergencyName': emergencyName, 'emergencyPhone': emergencyPhone,
@@ -57,6 +63,8 @@ class RifqaTripInfo {
     floor: '${j['floor'] ?? ''}',
     building: '${j['building'] ?? ''}',
     hotelAddress: '${j['hotelAddress'] ?? ''}',
+    madinahHotelName: '${j['madinahHotelName'] ?? ''}',
+    madinahHotelAddress: '${j['madinahHotelAddress'] ?? ''}',
     hotelPhone: '${j['hotelPhone'] ?? ''}',
     guideName: '${j['guideName'] ?? ''}',
     guidePhone: '${j['guidePhone'] ?? ''}',
@@ -107,10 +115,12 @@ class RifqaProfileStore extends ChangeNotifier {
   static const _personalKey = 'rifqa_profile_personal_v1';
   static const _contactsKey = 'rifqa_profile_contacts_v1';
   static const _largeTextKey = 'rifqa_profile_large_text_v1';
+  static const _profileImageKey = 'rifqa_profile_image_path_v1';
 
   RifqaTripInfo trip = const RifqaTripInfo();
   RifqaPersonalInfo personal = const RifqaPersonalInfo();
   List<RifqaSavedContact> contacts = [];
+  String profileImagePath = '';
   bool largeText = false;
   bool loaded = false;
   Future<void>? _loading;
@@ -123,6 +133,7 @@ class RifqaProfileStore extends ChangeNotifier {
       final tripString = prefs.getString(_tripKey);
       final personalString = prefs.getString(_personalKey);
       final contactsString = prefs.getString(_contactsKey);
+      profileImagePath = prefs.getString(_profileImageKey) ?? '';
       if (tripString != null) {
         trip = RifqaTripInfo.fromJson(Map<String, dynamic>.from(jsonDecode(tripString) as Map));
       }
@@ -157,6 +168,14 @@ class RifqaProfileStore extends ChangeNotifier {
     final p = await SharedPreferences.getInstance();
     await p.setString(_personalKey, jsonEncode(value.toJson()));
     personal = value;
+    notifyListeners();
+  }
+
+  Future<void> saveProfileImagePath(String value) async {
+    await load();
+    final p = await SharedPreferences.getInstance();
+    await p.setString(_profileImageKey, value);
+    profileImagePath = value;
     notifyListeners();
   }
 

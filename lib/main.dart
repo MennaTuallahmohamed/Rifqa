@@ -9,6 +9,9 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
 import 'core/theme/app_theme.dart';
 import 'services/message_notification_service.dart';
+import 'services/community/community_reply_bridge.dart';
+import 'screens/community/community_screen.dart';
+import 'screens/groups/friends_screen.dart';
 import 'screens/auth/flow_screen.dart';
 import 'screens/groups/direct_chat_screen.dart';
 import 'screens/groups/groups_screen.dart' show GroupChatScreen;
@@ -68,6 +71,30 @@ Future<void> _openNotification(Map<String, String> data) async {
       return;
     }
 
+    if (data['type'] == 'community_reply' || data['type'] == 'community_activity') {
+      final postId = data['postId'];
+      final notificationId = data['notificationId'];
+      if (notificationId != null && notificationId.isNotEmpty) {
+        try {
+          await FirebaseFirestore.instance.collection('users').doc(user.uid)
+            .collection('community_notifications').doc(notificationId)
+            .update({'read': true});
+        } catch (error) {
+          debugPrint('[Rifqa] mark notification read: $error');
+        }
+      }
+      if (data['kind'] == 'friend_request') {
+        navigator.push(MaterialPageRoute<void>(
+          builder: (_) => const FriendsScreen(),
+        ));
+        return;
+      }
+      if (postId == null || postId.isEmpty) return;
+      navigator.push(MaterialPageRoute<void>(
+        builder: (_) => CommunityScreen(initialPostId: postId),
+      ));
+      return;
+    }
     final type = data['type'];
     if (type != 'group_message' &&
         type != 'group_announcement' &&
@@ -122,7 +149,9 @@ Future<void> main() async {
   });
 
   unawaited(
-    MessageNotificationService.instance.initialize().catchError((Object error) {
+    MessageNotificationService.instance.initialize().then((_) {
+      CommunityReplyBridge.instance.start();
+    }).catchError((Object error) {
       debugPrint('Message notifications unavailable: $error');
     }),
   );

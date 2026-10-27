@@ -128,6 +128,21 @@ class _RifqaEmergencyNumbersScreenState extends State<RifqaEmergencyNumbersScree
                   if (trip.floor.isNotEmpty) 'الدور: ${trip.floor}'].where((s) => s.isNotEmpty).join(' • '),
                   style: Rp.style(11.5, color: Rp.muted)),
               ],
+              if (trip.hotelAddress.trim().isNotEmpty) ...[
+                const SizedBox(height: 5),
+                Text('عنوان الفندق الأساسي: ${trip.hotelAddress}',
+                  style: Rp.style(11.5, color: Rp.muted)),
+              ],
+              if (trip.madinahHotelName.trim().isNotEmpty ||
+                  trip.madinahHotelAddress.trim().isNotEmpty) ...[
+                const SizedBox(height: 5),
+                Text([
+                  if (trip.madinahHotelName.trim().isNotEmpty)
+                    'فندق المدينة: ${trip.madinahHotelName}',
+                  if (trip.madinahHotelAddress.trim().isNotEmpty)
+                    'العنوان: ${trip.madinahHotelAddress}',
+                ].join(' • '), style: Rp.style(11.5, color: Rp.muted)),
+              ],
               const SizedBox(height: 13),
               for (final c in store.tripContacts) ...[
                 const Divider(height: 16, color: Rp.edge),
